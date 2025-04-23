@@ -1,0 +1,70 @@
+import React, { useEffect, useRef, useState } from 'react';
+import { View, Animated, StyleSheet, Image, StatusBar } from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
+import { useNavigation } from '@react-navigation/native';
+
+export default function WelcomeScreen() {
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(0.85)).current;
+  const navigation = useNavigation();
+
+  const [currentImage, setCurrentImage] = useState(require('../assets/firstImg.png'));
+  const secondImage = require('../assets/secondImg.png');
+
+  useEffect(() => {
+    // Initial fade in with scale effect
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 1500,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scaleAnim, {
+        toValue: 1,
+        duration: 1500,
+        useNativeDriver: true,
+      })
+    ]).start();
+
+    // Sequence for transition to second image then navigate
+    const timeout = setTimeout(() => {
+        navigation.replace('Third');
+    }, 3000);
+
+    return () => clearTimeout(timeout);
+  }, []);
+
+  return (
+    <View style={styles.container}>
+      <LinearGradient
+        colors={['#0F172A', '#D4ACFB']}
+        locations={[0, 0.5]}
+        style={styles.linearGradient}
+      >
+        <Animated.View style={{
+          opacity: fadeAnim,
+          transform: [{ scale: scaleAnim }]
+        }}>
+          <Image style={styles.img} source={currentImage} />
+        </Animated.View>
+        <StatusBar barStyle="light-content" backgroundColor="#0F172A" />
+      </LinearGradient>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  linearGradient: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  img: {
+    width: 100,
+    height: 100,
+    borderRadius: 100,
+  },
+});
