@@ -8,3 +8,14 @@
 #   http://developer.android.com/guide/developing/tools/proguard.html
 
 # Add any project specific keep options here:
+
+# React Native Vector Icons
+-keep class com.facebook.react.views.** { *; }
+-keep class com.facebook.react.uimanager.** { *; }
+-keep class com.horcrux.svg.** { *; }
+
+
+-keep class com.oblador.vectoricons.** { *; }
+-keep interface com.oblador.vectoricons.** { *; }
+-keep public class * extends com.facebook.react.uimanager.ViewManager
+-keep public class * extends com.facebook.react.bridge.NativeModule
