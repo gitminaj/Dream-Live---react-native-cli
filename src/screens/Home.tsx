@@ -8,6 +8,7 @@ import {
   StyleSheet,
   Animated,
   Easing,
+  TouchableOpacity
 } from "react-native";
 import { LinearGradient } from "react-native-linear-gradient";
 import Icon from "react-native-vector-icons/Fontisto";
@@ -15,16 +16,39 @@ import HomeFooter from "../components/HomeFooter";
 import SingleFeed from "../components/home/SingleFeed";
 import CharacterArrangement from "../components/home/CharacterArrangement";
 import GamePieces from "../components/home/GamePieces";
+import { useNavigation } from '@react-navigation/native';
 
 import { InputWithIcon } from "../components/InputWithIcon";
 
 export default function Home() {
+  const navigation = useNavigation();
   // Animation values
   const blueBoxAnim = useRef(new Animated.Value(-200)).current;
   const redBoxAnim = useRef(new Animated.Value(200)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const headerAnim = useRef(new Animated.Value(-50)).current; // For header slide-in from top
+  
+  // Diamond animations
+  const diamondScale = useRef(new Animated.Value(1)).current;
+  // const diamondRotate = useRef(new Animated.Value(0)).current;
+  const diamondOpacity = useRef(new Animated.Value(1)).current;
+  
+  // Feed item animations - corrected reference method
+  const feedAnimations = useRef([...Array(8)].map(() => new Animated.Value(100))).current;
+  const feedOpacity = useRef([...Array(8)].map(() => new Animated.Value(0))).current;
+
+  // Sample feed data
+  const feedData = [
+    { name: "Emilly Watson", image: require("../assets/homeFeed/emmily.png") },
+    { name: "Jhon Watson", image: require("../assets/homeFeed/jhon.png") },
+    { name: "Jhon Watson", image: require("../assets/homeFeed/jhon.png") },
+    { name: "Emilly Watson", image: require("../assets/homeFeed/emmily.png") },
+    { name: "Emilly Watson", image: require("../assets/homeFeed/emmily.png") },
+    { name: "Jhon Watson", image: require("../assets/homeFeed/jhon.png") },
+    { name: "Jhon Watson", image: require("../assets/homeFeed/jhon.png") },
+    { name: "Emilly Watson", image: require("../assets/homeFeed/emmily.png") }
+  ];
 
   // Start animations when component mounts
   useEffect(() => {
@@ -58,6 +82,12 @@ export default function Home() {
 
     // Start pulse animation loop
     startPulseAnimation();
+    
+    // Start feed card animations with staggered delay
+    startFeedAnimations();
+    
+    // Start diamond animation
+    startDiamondAnimation();
   }, []);
 
   // Pulse animation function
@@ -80,9 +110,109 @@ export default function Home() {
     ).start();
   };
 
+  // Diamond animation function - combined scale, rotation and opacity
+  const startDiamondAnimation = () => {
+    // Create a combined animation sequence
+    Animated.loop(
+      Animated.parallel([
+        // Scale animation
+        Animated.sequence([
+          Animated.timing(diamondScale, {
+            toValue: 1.3,
+            duration: 1500,
+            easing: Easing.bezier(0.4, 0, 0.2, 1),
+            useNativeDriver: true,
+          }),
+          Animated.timing(diamondScale, {
+            toValue: 0.9,
+            duration: 1500, 
+            easing: Easing.bezier(0.4, 0, 0.2, 1),
+            useNativeDriver: true,
+          }),
+          Animated.timing(diamondScale, {
+            toValue: 1,
+            duration: 1000,
+            easing: Easing.bezier(0.4, 0, 0.2, 1),
+            useNativeDriver: true,
+          }),
+        ]),
+        
+        // Rotation animation
+        // 
+        
+        
+        // Glittering effect with opacity
+        Animated.sequence([
+          Animated.timing(diamondOpacity, {
+            toValue: 0.7,
+            duration: 500,
+            easing: Easing.bezier(0.4, 0, 0.2, 1),
+            useNativeDriver: true,
+          }),
+          Animated.timing(diamondOpacity, {
+            toValue: 1,
+            duration: 500,
+            easing: Easing.bezier(0.4, 0, 0.2, 1),
+            useNativeDriver: true,
+          }),
+          Animated.timing(diamondOpacity, {
+            toValue: 0.8,
+            duration: 300,
+            easing: Easing.bezier(0.4, 0, 0.2, 1),
+            useNativeDriver: true,
+          }),
+          Animated.timing(diamondOpacity, {
+            toValue: 1,
+            duration: 300,
+            easing: Easing.bezier(0.4, 0, 0.2, 1),
+            useNativeDriver: true,
+          }),
+          Animated.delay(2400), // Wait for the rest of the animation cycle
+        ]),
+      ])
+    ).start();
+  };
+
+  // Staggered animation for feed cards
+  const startFeedAnimations = () => {
+    // Create animation sequence for each feed item with staggered delay
+    const animations = feedAnimations.map((animation, index) => {
+      return Animated.parallel([
+        Animated.timing(animation, {
+          toValue: 0,
+          duration: 800,
+          delay: 1000 + (index * 100), // Staggered delay
+          easing: Easing.out(Easing.back(1.2)),
+          useNativeDriver: true,
+        }),
+        Animated.timing(feedOpacity[index], {
+          toValue: 1,
+          duration: 800,
+          delay: 1000 + (index * 100),
+          useNativeDriver: true,
+        })
+      ]);
+    });
+
+    Animated.parallel(animations).start();
+  };
+
+  // Calculate rotation interpolation for diamond
+  // const spin = diamondRotate.interpolate({
+  //   inputRange: [0, 1],
+  //   outputRange: ['0deg', '360deg']
+  // });
+
   return (
     <>
+     
       <View style={styles.container}>
+      <ScrollView
+          horizontal={false}
+          vertical={true}
+          showsHorizontalScrollIndicator={false}
+          showsVerticalScrollIndicator={false}
+        >
         {/* Wrap header in Animated.View for slide-in from top animation */}
         <Animated.View 
           style={[
@@ -93,11 +223,21 @@ export default function Home() {
           <View style={styles.btnLang}>
             <Text style={styles.btnText}>En</Text>
           </View>
-          <Image
-            resizeMode="contain"
-            style={{ width: 20, height: 20 }}
-            source={require("../assets/daimond.png")}
-          />
+          
+          {/* Diamond with multiple animations */}
+          <Animated.View style={{
+            transform: [
+              { scale: diamondScale },
+              // { rotate: spin }
+            ],
+            opacity: diamondOpacity,
+          }}>
+            <Image
+              resizeMode="contain"
+              style={styles.diamond}
+              source={require("../assets/daimond.png")}
+            />
+          </Animated.View>
 
           <View style={styles.searchInput}>
             <View style={styles.inputContainer}>
@@ -199,9 +339,9 @@ export default function Home() {
           <View style={styles.filterBtn}>
             <Text style={styles.filterBtnText}>All</Text>
           </View>
-          <View style={styles.filterBtn}>
-            <Text style={styles.filterBtnText}>Following</Text>
-          </View>
+          <TouchableOpacity onPress={ () => navigation.navigate("Discover")} style={styles.filterBtn}>
+            <Text style={styles.filterBtnText}>Discover</Text>
+          </TouchableOpacity>
           <View style={styles.filterBtn}>
             <Text style={styles.filterBtnText}>Love💖</Text>
           </View>
@@ -216,45 +356,43 @@ export default function Home() {
           </View>
         </Animated.View>
 
-        <ScrollView
-          horizontal={false}
-          vertical={true}
-          showsHorizontalScrollIndicator={false}
-        >
-          <View style={styles.mainFeedContainer}>
-            <SingleFeed
-              name={"Emilly Watson"}
-              image={require("../assets/homeFeed/emmily.png")}
-            />
-            <SingleFeed
-              name={"jhon Watson"}
-              image={require("../assets/homeFeed/jhon.png")}
-            />
-            <SingleFeed
-              name={"jhon Watson"}
-              image={require("../assets/homeFeed/jhon.png")}
-            />
-            <SingleFeed
-              name={"Emilly Watson"}
-              image={require("../assets/homeFeed/emmily.png")}
-            />
-            <SingleFeed
-              name={"Emilly Watson"}
-              image={require("../assets/homeFeed/emmily.png")}
-            />
-            <SingleFeed
-              name={"jhon Watson"}
-              image={require("../assets/homeFeed/jhon.png")}
-            />
-            <SingleFeed
-              name={"jhon Watson"}
-              image={require("../assets/homeFeed/jhon.png")}
-            />
-            <SingleFeed
-              name={"Emilly Watson"}
-              image={require("../assets/homeFeed/emmily.png")}
-            />
-          </View>
+        <View style={styles.mainFeedContainer}>
+          {feedData.map((feed, index) => (
+            <Animated.View 
+              key={index}
+              style={{
+                transform: [{ translateY: feedAnimations[index] }],
+                opacity: feedOpacity[index],
+                width: '48%',
+                marginBottom: 10
+              }}
+            >
+              <TouchableOpacity 
+                activeOpacity={0.8} 
+                onPress={() => {
+                  // Create a press animation effect
+                  Animated.sequence([
+                    Animated.timing(feedAnimations[index], {
+                      toValue: -5,
+                      duration: 100,
+                      useNativeDriver: true,
+                    }),
+                    Animated.timing(feedAnimations[index], {
+                      toValue: 0,
+                      duration: 100,
+                      useNativeDriver: true,
+                    })
+                  ]).start();
+                }}
+              >
+                <SingleFeed
+                  name={feed.name}
+                  image={feed.image}
+                />
+              </TouchableOpacity>
+            </Animated.View>
+          ))}
+        </View>
         </ScrollView>
       </View>
       <HomeFooter />
@@ -263,12 +401,17 @@ export default function Home() {
 }
 
 const styles = StyleSheet.create({
+  diamond: {
+    width: 20,
+    height: 20,
+  },
   mainFeedContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
     width: "100%",
     flexWrap: "wrap",
     paddingLeft: 3,
+    marginTop: 10
   },
   filterBtnText: {
     fontSize: 8,

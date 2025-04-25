@@ -6,8 +6,10 @@ import OnBoarding from './src/screens/OnBoarding';
 import OnBoardingSlider from './src/screens/OnBoardingSlider';
 import Register from './src/screens/auth/Register';
 import Login from './src/screens/auth/Login';
+import VerifyEmail from './src/screens/auth/VerifyEmail';
 import Home from './src/screens/Home';
 import Discover from './src/screens/Discover';
+import Chat from './src/screens/Chat';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 // import { AppContextProvider } from './src/utils/context/context'
 
@@ -28,6 +30,8 @@ function App(): React.JSX.Element {
           <Stack.Screen name="Login" component={Login} />
           <Stack.Screen name="Home" component={Home} />
           <Stack.Screen name="Discover" component={Discover} />
+          <Stack.Screen name="VerifyEmail" component={VerifyEmail} />
+          <Stack.Screen name="Chat" component={Chat} />
         </Stack.Navigator>
       </NavigationContainer>
     // </AppContextProvider>

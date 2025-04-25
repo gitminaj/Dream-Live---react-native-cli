@@ -24,15 +24,15 @@ const slides = [
     image: require('../assets/fifthImg.png'), 
     backgroundColor: '#d8c9f0',
   },
+  // {
+  //   key: 'slide2',
+  //   title: 'Get free slot games and all others gambling games',
+  //   text: 'Enjoy premium gaming content without any cost',
+  //   image: require('../assets/sixthImg.png'), 
+  //   backgroundColor: '#d8c9f0',
+  // },
   {
     key: 'slide2',
-    title: 'Get free slot games and all others gambling games',
-    text: 'Enjoy premium gaming content without any cost',
-    image: require('../assets/sixthImg.png'), 
-    backgroundColor: '#d8c9f0',
-  },
-  {
-    key: 'slide3',
     title: 'Fun games and lot of more',
     text: 'Discover new entertainment options every day',
     image: require('../assets/seventhImg.png'), 

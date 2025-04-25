@@ -1,11 +1,14 @@
 import React from "react";
-import { View, Text, Image, StyleSheet, Dimensions } from "react-native";
+import { View, Text, Image, StyleSheet, Dimensions, TouchableOpacity } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 
 const Width = Dimensions.get("window").width;
 const bannerWidth = Width * 0.4 ; 
 
 
 export default function FollowCard({ name, image }) {
+  const navigation = useNavigation();
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -21,16 +24,18 @@ export default function FollowCard({ name, image }) {
         </View>
         <View>
           {/* <Link href="/chat" > */}
+          <TouchableOpacity onPress={() => navigation.navigate('Chat') }>
            <Text style={styles.chatBtn}>Chat</Text>
+          </TouchableOpacity>
           {/* </Link> */}
         </View>
       </View>
 
-      <Image
+      {/* <Image
         style={styles.mainBanner}
         resizeMode="cover"
         source={image}
-      />
+      /> */}
 
     </View>
   );

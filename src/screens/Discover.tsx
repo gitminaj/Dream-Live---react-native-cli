@@ -39,12 +39,12 @@ export default function Discover() {
                     color: activeTab === "follow" ? 'white' : '#94A3B8', 
                     fontWeight: 700 
                   }} 
-                > 
+                >
                   Follow
                 </Text>
               </TouchableOpacity>
           </View>
-          <Icon style={styles.bellIcon} size={24} name='bell' />
+          <Icon style={styles.bellIcon} size={20} name='bell' />
         </View>
 
         {activeTab === "discover" && (
@@ -100,3 +100,5 @@ const styles = StyleSheet.create({
     fontSize: 16
   }
 });
+
+

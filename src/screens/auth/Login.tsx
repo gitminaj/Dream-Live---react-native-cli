@@ -10,7 +10,8 @@ import {
 // import CheckBox from '@react-native-community/checkbox';
 import IconPassword from "react-native-vector-icons/Feather";
 import IconEmail from "react-native-vector-icons/Fontisto";
-import { useNavigation } from '@react-navigation/native'
+import { useNavigation } from '@react-navigation/native';
+import { loginSchema } from "../../utils/schema/login";
 
 import { InputWithIcon } from "../../components/InputWithIcon";
 
@@ -19,6 +20,10 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isChecked, setIsChecked] = useState(false);
+
+  const handleSubmit = () =>{
+    // const result = loginSchema.safeParse(form)
+  }
 
   return (
     <>

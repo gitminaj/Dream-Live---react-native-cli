@@ -24,7 +24,7 @@ export default function DiscoverCard({ name, image }) {
         </View>
       </View>
 
-      <Image
+      {/* <Image
         style={styles.mainBanner}
         resizeMode="cover"
         source={image}
@@ -46,7 +46,7 @@ export default function DiscoverCard({ name, image }) {
           source={require("../../assets/discoverGift.png")}
           resizeMode="contain"
         />
-      </View>
+      </View> */}
     </View>
   );
 }
@@ -54,6 +54,7 @@ export default function DiscoverCard({ name, image }) {
 const styles = StyleSheet.create({
   container: {
     marginTop: 30,
+    // borderRadius: 10
   },
   header: {
     flexDirection: "row",
