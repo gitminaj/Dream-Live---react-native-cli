@@ -14,15 +14,51 @@ import { useNavigation } from '@react-navigation/native';
 import { loginSchema } from "../../utils/schema/login";
 
 import { InputWithIcon } from "../../components/InputWithIcon";
+import axios from "axios";
+import { BASE_URL } from "../../utils/constant";
+import { storeDataInStore } from "../../store";
 
 export default function Login() {
     const navigation = useNavigation();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [isChecked, setIsChecked] = useState(false);
+  const [error, setError] = useState();
 
-  const handleSubmit = () =>{
-    // const result = loginSchema.safeParse(form)
+
+  const [form, setForm] = useState({
+      email: '',
+      password: '',
+    });
+
+  const handleChange = (fieldName, value) => {
+    setForm( {...form, [fieldName]: value} )
+  }
+
+  const handleSubmit = async () =>{
+    const result = loginSchema.safeParse(form);
+
+    if(result.success){
+      console.log('form', form);
+      try {
+        const response = await axios.post(`${BASE_URL}/auth/login`,
+          form
+        )
+        console.log('response', response);
+        const { token, user} = response.data;
+        
+        await storeDataInStore('token', token);
+        await storeDataInStore('user', user);
+        
+        navigation.navigate('Home');
+      } catch (err) {
+        console.log('error: ', err?.response?.data);
+      setError(err.response?.data?.message || 'Login failed');
+      }
+    }else{
+      const errorMessages = result.error.errors.map(err => err.message);
+    setError(errorMessages.join(', '));
+    console.log('Validation errors:', errorMessages);
+    }
+
   }
 
   return (
@@ -31,10 +67,11 @@ export default function Login() {
         <View style={styles.elementContainer}>
           <Text style={styles.text}>Login</Text>
 
+          {error && <Text style={{ color: 'red'}}>{error}</Text>}
+
           <InputWithIcon
             placeholder="Enter your Email"
-            value={email}
-            onChangeText={setEmail}
+            value={form.email}
             icon={
               <IconEmail
                 name="email"
@@ -44,12 +81,13 @@ export default function Login() {
               />
             }
             keyboardType="email-address"
+            onChangeText= { email => handleChange('email', email) }
           />
 
           <InputWithIcon
             placeholder="Enter your Password"
-            value={password}
-            onChangeText={setPassword}
+            value={form.password}
+            onChangeText={password => handleChange('password', password)}
             icon={
               <IconPassword
                 name="lock"
@@ -58,6 +96,7 @@ export default function Login() {
                 style={styles.icon}
               />
             }
+            secureTextEntry={true}
           />
           <View style={styles.remembernpassword}>
             <View style={styles.checkboxContainer}>
@@ -77,9 +116,9 @@ export default function Login() {
             </View>
           </View>
 
-          <View style={styles.btn}>
+          <TouchableOpacity onPress={handleSubmit} style={styles.btn}>
             <Text style={styles.btnText}>Sign in</Text>
-          </View>
+          </TouchableOpacity>
 
           <View style={styles.lineContainer}>
             <View style={styles.line} />

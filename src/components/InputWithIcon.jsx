@@ -2,6 +2,7 @@ import React from "react";
 import { View, TextInput, StyleSheet } from "react-native";
 
 export const InputWithIcon = ({
+  secureTextEntry = false,
   placeholder,
   value,
   onChangeText,
@@ -18,7 +19,7 @@ export const InputWithIcon = ({
           placeholderTextColor="#8C8C8C"
           value={value}
           onChangeText={onChangeText}
-          // secureTextEntry={secureTextEntry}
+          secureTextEntry={secureTextEntry}
           underlineColorAndroid="transparent"
           keyboardType={keyboardType}
         />

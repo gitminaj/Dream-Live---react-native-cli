@@ -260,11 +260,14 @@ export default function Home() {
             <Text style={styles.btnText}>Go Live</Text>
           </Animated.View>
 
+          <TouchableOpacity onPress={() => navigation.navigate('Profile')} >
+
           <Image
             resizeMode="contain"
             style={{ width: 24, height: 24 }}
             source={require("../assets/profileIcon.png")}
           />
+          </TouchableOpacity>
         </Animated.View>
 
         <View style={styles.callContainer}>

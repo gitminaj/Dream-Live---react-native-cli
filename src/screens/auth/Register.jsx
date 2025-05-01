@@ -31,7 +31,7 @@ import IconEye from 'react-native-vector-icons/Feather';
 import {InputWithIcon} from '../../components/InputWithIcon';
 
 export default function Register() {
-  const [error, setError] = useState(''); // Only for password and registration errors
+  const [error, setError] = useState(''); 
   const [fieldErrors, setFieldErrors] = useState({
     name: false,
     email: false,
@@ -88,10 +88,12 @@ export default function Register() {
     if (result.success) {
       console.log('inside try');
       try {
+        console.log('inside try');
         // First send OTP without image data
         const response = await axios.post(`${BASE_URL}/auth/sendotp`, {
           email: form.email,
         });
+        console.log('inside try');
         console.log('response', response);
 
         // Pass both form data and file data to the verification screen
@@ -100,7 +102,7 @@ export default function Register() {
           fileData: fileData,
         });
       } catch (err) {
-        console.log('error: ', err);
+        console.log('error: ', err.response?.data);
         setError(err.response?.data?.message || 'Registration failed');
       }
     } else {

@@ -10,16 +10,18 @@ import VerifyEmail from './src/screens/auth/VerifyEmail';
 import Home from './src/screens/Home';
 import Discover from './src/screens/Discover';
 import Chat from './src/screens/Chat';
+import Profile from './src/screens/Profile';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
+
 // import { AppContextProvider } from './src/utils/context/context'
 
-import { View, Text } from "react-native";
 
 const Stack = createNativeStackNavigator();
 
 function App(): React.JSX.Element {
   return (
     // <AppContextProvider>
+    <>
       <NavigationContainer>
         <Stack.Navigator screenOptions={{ headerShown: false }} >
           <Stack.Screen name="Welcome" component={Welcome} />
@@ -32,8 +34,10 @@ function App(): React.JSX.Element {
           <Stack.Screen name="Discover" component={Discover} />
           <Stack.Screen name="VerifyEmail" component={VerifyEmail} />
           <Stack.Screen name="Chat" component={Chat} />
+          <Stack.Screen name="Profile" component={Profile} />
         </Stack.Navigator>
       </NavigationContainer>
+      </>
     // </AppContextProvider>
     // <View>
     //   <Text>App</Text>

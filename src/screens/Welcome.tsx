@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { View, Animated, StyleSheet, Image, StatusBar } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
+import { getDataFromStore, removeDataFromStore } from '../store';
 
 export default function WelcomeScreen() {
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -28,7 +29,19 @@ export default function WelcomeScreen() {
 
     // Sequence for transition to second image then navigate
     const timeout = setTimeout(() => {
-        navigation.replace('Third');
+      const handleNavigation = async () => {
+        await removeDataFromStore('token')
+        const token = await getDataFromStore('token');
+        console.log('token', token);
+        if(token){
+          navigation.replace('Home')
+        }else{
+  
+          navigation.replace('Third');
+        }
+      }
+
+      handleNavigation();
     }, 3000);
 
     return () => clearTimeout(timeout);
