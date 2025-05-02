@@ -9,7 +9,7 @@ import {
   Dimensions,
   KeyboardAvoidingView,
   Platform,
-  Alert,
+  Image,
 } from 'react-native';
 import { BASE_URL } from '../../utils/constant';
 import  axios  from 'axios';
@@ -68,14 +68,22 @@ export default function EmailVerification() {
     
     // Add OTP to FormData
     formDataToSubmit.append('otp', userEnteredOtp.trim());
+
+    const getDefaultImage = () => ({
+      uri: Image.resolveAssetSource(require('../../assets/profileIcon.png')).uri,
+      type: 'image/png',
+      name: 'default.png',
+    });
     
     // Add profile image if available
     if (fileData) {
       formDataToSubmit.append('profile', fileData);
+    }else{
+      formDataToSubmit.append('profile', getDefaultImage());
     }
   
     try {
-      console.log('Submitting FormData payload');
+      console.log('Submitting FormData payload',formDataToSubmit);
       const response = await axios.post(
         `${BASE_URL}/auth/register`, 
         formDataToSubmit,

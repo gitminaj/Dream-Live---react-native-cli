@@ -30,7 +30,7 @@ export default function WelcomeScreen() {
     // Sequence for transition to second image then navigate
     const timeout = setTimeout(() => {
       const handleNavigation = async () => {
-        await removeDataFromStore('token')
+        // await removeDataFromStore('token')
         const token = await getDataFromStore('token');
         console.log('token', token);
         if(token){

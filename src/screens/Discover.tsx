@@ -1,12 +1,52 @@
-import { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
+import { useEffect, useState, useContext } from "react";
+import { View, Text, StyleSheet, RefreshControl, TouchableOpacity, ScrollView } from "react-native";
 import DiscoverCard from '../components/discoverNfollow/DiscoverCard';
 import FollowCard from '../components/discoverNfollow/FollowCard';
 import Icon from "react-native-vector-icons/SimpleLineIcons";
+import axios from 'axios';
+import { BACKEND_URL, BASE_URL } from "../utils/constant";
+import { UserContext } from "../utils/context/user-context";
 
 
 export default function Discover() {
   const [activeTab, setActiveTab] = useState("discover");
+  const [discoverUser, setDiscoverUser] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
+  const { user: userCon  } = useContext(UserContext);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+      const getAllUser = async () =>{
+        try {
+          const response = await axios.get(`${BASE_URL}/auth/users`);
+    
+          console.log('all user', response?.data?.data);
+          setDiscoverUser(response?.data?.data);
+        } catch (error) {
+          console.log('error fetching all users', error);
+        }
+      }
+      getAllUser();
+      
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 2000);
+  };
+
+  useEffect(()=>{
+    const getAllUser = async () =>{
+      try {
+        const response = await axios.get(`${BASE_URL}/auth/users`);
+  
+        console.log('all user', response?.data?.data);
+        setDiscoverUser(response?.data?.data.filter( user => userCon._id !== user._id ));
+      } catch (error) {
+        console.log('error fetching all users', error);
+      }
+    }
+    getAllUser();
+  },[])
+
 
   return (
     <>
@@ -51,10 +91,17 @@ export default function Discover() {
           <ScrollView
           horizontal={false}
           vertical={true}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
           showsHorizontalScrollIndicator={false} style={styles.contentContainer}>
-            <DiscoverCard name={'Emilly Watson'} image={require('../assets/homeFeed/emmily.png')} />
-            <DiscoverCard name={'jhon Watson'} image={require('../assets/homeFeed/jhon.png')} />
-            <DiscoverCard name={'jhon Watson'} image={require('../assets/homeFeed/jhon.png')} />
+            {
+              discoverUser.map((user) => {
+                const profileUrl = `${BACKEND_URL}/${user.profile.replace(/\\/g, '/')}`;
+                return(
+                <DiscoverCard key={user._id} name={user.name} image={ String(profileUrl)} />
+              )})
+            }
           </ScrollView>
         )} 
 

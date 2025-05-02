@@ -13,15 +13,15 @@ import Chat from './src/screens/Chat';
 import Profile from './src/screens/Profile';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 
-// import { AppContextProvider } from './src/utils/context/context'
+import { UserContextProvider } from './src/utils/context/user-context';
+import LiveAudioRoom from './src/screens/LiveAudioRoom';
 
 
 const Stack = createNativeStackNavigator();
 
 function App(): React.JSX.Element {
   return (
-    // <AppContextProvider>
-    <>
+    <UserContextProvider>
       <NavigationContainer>
         <Stack.Navigator screenOptions={{ headerShown: false }} >
           <Stack.Screen name="Welcome" component={Welcome} />
@@ -35,13 +35,11 @@ function App(): React.JSX.Element {
           <Stack.Screen name="VerifyEmail" component={VerifyEmail} />
           <Stack.Screen name="Chat" component={Chat} />
           <Stack.Screen name="Profile" component={Profile} />
+          <Stack.Screen name="LiveAudioRoom" component={LiveAudioRoom} />
         </Stack.Navigator>
       </NavigationContainer>
-      </>
-    // </AppContextProvider>
-    // <View>
-    //   <Text>App</Text>
-    // </View>
+    </UserContextProvider>
+
   );
 }
 

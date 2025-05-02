@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useContext } from "react";
 import {
   ScrollView,
   TextInput,
@@ -17,10 +17,14 @@ import SingleFeed from "../components/home/SingleFeed";
 import CharacterArrangement from "../components/home/CharacterArrangement";
 import GamePieces from "../components/home/GamePieces";
 import { useNavigation } from '@react-navigation/native';
+import { UserContext } from "../utils/context/user-context";
 
 import { InputWithIcon } from "../components/InputWithIcon";
+import { BACKEND_URL } from "../utils/constant";
 
 export default function Home() {
+  const { user } = useContext(UserContext);
+  console.log('user home', user)
   const navigation = useNavigation();
   // Animation values
   const blueBoxAnim = useRef(new Animated.Value(-200)).current;
@@ -263,20 +267,23 @@ export default function Home() {
           <TouchableOpacity onPress={() => navigation.navigate('Profile')} >
 
           <Image
-            resizeMode="contain"
-            style={{ width: 24, height: 24 }}
-            source={require("../assets/profileIcon.png")}
+            resizeMode="cover"
+            style={{ width: 25, height: 25, borderRadius: 40 }}
+            source={{uri: `${BACKEND_URL}/${user?.profile.replace(/\\/g, '/')}`} }
           />
           </TouchableOpacity>
         </Animated.View>
 
         <View style={styles.callContainer}>
           {/* blue box joincall with animation */}
+          
           <Animated.View style={{ 
             width: "45%", 
             transform: [{ translateX: blueBoxAnim }],
             opacity: fadeAnim 
           }}>
+            <TouchableOpacity onPress={() => navigation.navigate('LiveAudioRoom')}>
+            
             <LinearGradient
               style={styles.joinCall}
               end={{ x: 1, y: 0 }}
@@ -300,6 +307,7 @@ export default function Home() {
                 <CharacterArrangement />
               </View>
             </LinearGradient>
+            </TouchableOpacity>
           </Animated.View>
 
           {/* red box play game with animation */}

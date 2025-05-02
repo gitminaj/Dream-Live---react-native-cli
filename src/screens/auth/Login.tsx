@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState,useContext } from "react";
 import {
   TouchableOpacity,
   View,
@@ -17,12 +17,14 @@ import { InputWithIcon } from "../../components/InputWithIcon";
 import axios from "axios";
 import { BASE_URL } from "../../utils/constant";
 import { storeDataInStore } from "../../store";
+import { UserContext } from "../../utils/context/user-context";
 
 export default function Login() {
     const navigation = useNavigation();
   const [isChecked, setIsChecked] = useState(false);
   const [error, setError] = useState();
 
+  const { refreshUser } = useContext(UserContext);
 
   const [form, setForm] = useState({
       email: '',
@@ -47,8 +49,8 @@ export default function Login() {
         
         await storeDataInStore('token', token);
         await storeDataInStore('user', user);
-        
-        navigation.navigate('Home');
+        refreshUser();
+        navigation.replace('Home');
       } catch (err) {
         console.log('error: ', err?.response?.data);
       setError(err.response?.data?.message || 'Login failed');
@@ -160,7 +162,8 @@ export default function Login() {
           </View>
           <View >
             <TouchableOpacity onPress={ () => navigation.navigate("Register")} >
-              <Text style={styles.bottomText}>not a member?register now</Text>
+              <Text style={styles.bottomText}>not a member?
+              <Text style={styles.underlineText}> register now</Text></Text>
             </TouchableOpacity>
           </View>
           <View >
@@ -178,6 +181,9 @@ export default function Login() {
 }
 
 const styles = StyleSheet.create({
+  underlineText: {
+    textDecorationLine: 'underline',
+  },
   bottomText:{
     textAlign: "center",
     color: "#94A3B8",
