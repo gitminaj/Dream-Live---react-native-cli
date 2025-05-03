@@ -30,8 +30,8 @@ export default function Following() {
 
   const [followingIds, setFollowingIds] = useState(following.map(user => user.followingId._id));
 
-  //   console.log('following ids', followingIds)
-  //   console.log('follower ids', followers)
+    console.log('following ', following)
+    console.log('follower ', followers)
 
   const isFollowing = id => {
     // console.log('is follwing passed it ',id)
@@ -134,13 +134,13 @@ const handleFollowToggle = async (targetId) => {
           }
           showsHorizontalScrollIndicator={false}
           style={styles.contentContainer}>
-          {followers.map(user => {
-            const profileUrl = `${BACKEND_URL}/${user.followerId.profile.replace(
+          {following.map(user => {
+            const profileUrl = `${BACKEND_URL}/${user.followingId.profile.replace(
               /\\/g,
               '/',
             )}`;
             return (
-              <View style={styles.discovercontainer} key={user.followerId._id}>
+              <View style={styles.discovercontainer} key={user.followingId._id}>
                 <View style={styles.header}>
                   <View style={{flexDirection: 'row'}}>
                     <Image
@@ -148,15 +148,15 @@ const handleFollowToggle = async (targetId) => {
                       source={{uri: profileUrl}}
                     />
                     <View>
-                      <Text style={styles.name}>{user.followerId.name}</Text>
+                      <Text style={styles.name}>{user.followingId.name}</Text>
                       <Text style={styles.timestamp}>6 hour ago</Text>
                     </View>
                   </View>
                   <View>
                     <TouchableOpacity
-                      onPress={() => handleFollowToggle(user.followerId._id)}>
+                      onPress={() => handleFollowToggle(user.followingId._id)}>
                       <Text style={styles.followBtn}>
-                        {isFollowing(user.followerId._id)
+                        {isFollowing(user.followingId._id)
                           ? 'Unfollow'
                           : 'Follow'}
                       </Text>
