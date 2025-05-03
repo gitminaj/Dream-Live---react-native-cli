@@ -24,7 +24,7 @@ export const UserContextProvider = ({children}) =>{
     useEffect(()=>{
         fetchUser();
     },[])
-
+    
     return(
         <UserContext.Provider value={{user, refreshUser: fetchUser}}>
             {children}
