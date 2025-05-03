@@ -1,4 +1,4 @@
-import React, {useEffect, useContext} from 'react';
+import React, {useEffect, useContext, useState} from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   ScrollView,
   SafeAreaView,
   StatusBar,
+  RefreshControl 
 } from 'react-native';
 import {getDataFromStore, removeDataFromStore} from '../store';
 import {useNavigation} from '@react-navigation/native';
@@ -39,10 +40,28 @@ const MenuItem = ({icon, onPress, title}) => {
 };
 
 const Profile = () => {
-  const { user } = useContext(UserContext);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const { user, following, followers, refreshAllUserData } = useContext(UserContext);
+  const [followingList, setFollowingList] = useState();
   console.log('user', user);
 
+
   const navigation = useNavigation();
+
+  const onRefresh = () => {
+    setRefreshing(true);
+
+    refreshAllUserData();
+
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 2000);
+  };
+
+  useEffect(()=>{
+    refreshAllUserData();
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -57,7 +76,11 @@ const Profile = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#1A202C" />
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
+      <ScrollView contentContainerStyle={styles.scrollContainer}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
+      >
         {/* Profile Header */}
         <View style={{flexDirection: 'row', justifyContent: 'space-between'}}>
           <View style={styles.profileHeader}>
@@ -68,7 +91,7 @@ const Profile = () => {
             />
             <View>
               <Text style={styles.userName}>{user.name}</Text>
-              <Text style={styles.userId}>ID: {user._id}</Text>
+              {/* <Text style={styles.userId}>ID: {user._id}</Text> */}
             </View>
           </View>
           <TouchableOpacity onPress={handleLogout}>
@@ -86,14 +109,14 @@ const Profile = () => {
             <Text style={styles.statValue}>0</Text>
             <Text style={styles.statLabel}>Visitors</Text>
           </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>0</Text>
+          <TouchableOpacity onPress={ () => navigation.navigate('Following') } style={styles.statItem}>
+            <Text style={styles.statValue}>{following.length}</Text>
             <Text style={styles.statLabel}>Following</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>0</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={ () => navigation.navigate('Followers') } style={styles.statItem}>
+            <Text style={styles.statValue}>{followers.length}</Text>
             <Text style={styles.statLabel}>Followers</Text>
-          </View>
+          </TouchableOpacity>
         </View>
 
         {/* Currency Boxes */}

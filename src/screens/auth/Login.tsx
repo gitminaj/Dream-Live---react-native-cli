@@ -24,7 +24,7 @@ export default function Login() {
   const [isChecked, setIsChecked] = useState(false);
   const [error, setError] = useState();
 
-  const { refreshUser } = useContext(UserContext);
+  const { refreshAllUserData } = useContext(UserContext);
 
   const [form, setForm] = useState({
       email: '',
@@ -49,7 +49,7 @@ export default function Login() {
         
         await storeDataInStore('token', token);
         await storeDataInStore('user', user);
-        refreshUser();
+        refreshAllUserData();
         navigation.replace('Home');
       } catch (err) {
         console.log('error: ', err?.response?.data);

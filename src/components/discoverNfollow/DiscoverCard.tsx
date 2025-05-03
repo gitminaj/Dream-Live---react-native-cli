@@ -7,7 +7,7 @@ const bannerWidth = Width * 0.4 ;
 
 export default function DiscoverCard({ name, image }) {
   return (
-    <View style={styles.container}>
+    <View style={styles.discovercontainer}>
       <View style={styles.header}>
         <View style={{ flexDirection: "row" }}>
           <Image
@@ -52,7 +52,7 @@ export default function DiscoverCard({ name, image }) {
 }
 
 const styles = StyleSheet.create({
-  container: {
+  discovercontainer: {
     marginTop: 30,
     // borderRadius: 10
   },

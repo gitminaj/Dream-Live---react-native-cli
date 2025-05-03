@@ -12,9 +12,11 @@ import Discover from './src/screens/Discover';
 import Chat from './src/screens/Chat';
 import Profile from './src/screens/Profile';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
+import LiveAudioRoom from './src/screens/LiveAudioRoom';
+import Followers from './src/screens/Followers';
+import Following from './src/screens/Following';
 
 import { UserContextProvider } from './src/utils/context/user-context';
-import LiveAudioRoom from './src/screens/LiveAudioRoom';
 
 
 const Stack = createNativeStackNavigator();
@@ -36,6 +38,8 @@ function App(): React.JSX.Element {
           <Stack.Screen name="Chat" component={Chat} />
           <Stack.Screen name="Profile" component={Profile} />
           <Stack.Screen name="LiveAudioRoom" component={LiveAudioRoom} />
+          <Stack.Screen name="Followers" component={Followers} />
+          <Stack.Screen name="Following" component={Following} />
         </Stack.Navigator>
       </NavigationContainer>
     </UserContextProvider>

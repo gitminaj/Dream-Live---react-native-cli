@@ -15,7 +15,7 @@ export default function FollowCard({ name, image }) {
         <View style={{ flexDirection: "row" }}>
           <Image
             style={styles.profileImage}
-            source={image}
+            source={{uri: String(image)}}
           />
           <View>
             <Text style={styles.name}>{name}</Text>

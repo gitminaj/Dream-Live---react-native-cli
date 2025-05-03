@@ -6,46 +6,73 @@ import Icon from "react-native-vector-icons/SimpleLineIcons";
 import axios from 'axios';
 import { BACKEND_URL, BASE_URL } from "../utils/constant";
 import { UserContext } from "../utils/context/user-context";
+import { getDataFromStore } from "../store";
 
 
 export default function Discover() {
   const [activeTab, setActiveTab] = useState("discover");
   const [discoverUser, setDiscoverUser] = useState([]);
+  const [followingUser, setFollowingUser] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const { user: userCon  } = useContext(UserContext);
 
   const onRefresh = () => {
     setRefreshing(true);
-      const getAllUser = async () =>{
-        try {
-          const response = await axios.get(`${BASE_URL}/auth/users`);
-    
-          console.log('all user', response?.data?.data);
-          setDiscoverUser(response?.data?.data);
-        } catch (error) {
-          console.log('error fetching all users', error);
-        }
-      }
-      getAllUser();
+
+    getDiscoverUser();
       
+    getFollowingUser();
+
     setTimeout(() => {
       setRefreshing(false);
     }, 2000);
   };
 
-  useEffect(()=>{
-    const getAllUser = async () =>{
-      try {
-        const response = await axios.get(`${BASE_URL}/auth/users`);
-  
-        console.log('all user', response?.data?.data);
-        setDiscoverUser(response?.data?.data.filter( user => userCon._id !== user._id ));
-      } catch (error) {
-        console.log('error fetching all users', error);
-      }
+  const getDiscoverUser = async () =>{
+    try {
+      const response = await axios.get(`${BASE_URL}/follow/discover/${userCon._id}`);
+
+      console.log('all user', response);
+      setDiscoverUser(response?.data);
+    } catch (error) {
+      console.log('error fetching all users', error);
     }
-    getAllUser();
-  },[])
+  };
+
+  const getFollowingUser = async () =>{
+    try {
+      const response = await axios.get(`${BASE_URL}/follow/following/${userCon._id}`);
+
+      console.log('following user', response);
+      setFollowingUser(response?.data?.data);
+    } catch (error) {
+      console.log('error fetching all users', error);
+    }
+  };
+
+
+  useEffect(()=>{
+    getDiscoverUser();
+    getFollowingUser();
+  },[]);
+
+  const handleFollow = async(followingId) =>{
+    const token = await getDataFromStore('token');
+    const payload = {
+      followerId : userCon._id
+      , followingId
+    }
+    try {
+      const response = await axios.post(`${BASE_URL}/follow/follow`,payload ,{ 
+        headers:{
+          Authorization: `Bearer ${token}`
+        }
+       })
+       console.log('response', response)
+    } catch (err) {
+      console.log('error while following', err.response)
+    }
+  }
 
 
   return (
@@ -99,7 +126,9 @@ export default function Discover() {
               discoverUser.map((user) => {
                 const profileUrl = `${BACKEND_URL}/${user.profile.replace(/\\/g, '/')}`;
                 return(
-                <DiscoverCard key={user._id} name={user.name} image={ String(profileUrl)} />
+                  <TouchableOpacity onPress={() => handleFollow(user._id)} key={user._id}>
+                    <DiscoverCard  name={user.name} image={ String(profileUrl)} />
+                  </TouchableOpacity>
               )})
             }
           </ScrollView>
@@ -109,10 +138,21 @@ export default function Discover() {
           <ScrollView
           horizontal={false}
           vertical={true}
-          showsHorizontalScrollIndicator={false} style={styles.contentContainer}>
-            <FollowCard name={'Emilly Watson'} image={require('../assets/homeFeed/emmily.png')} />
-            <FollowCard name={'Watson Jhon'} image={require('../assets/homeFeed/jhon.png')} />
-            <FollowCard name={'Emilly Watson'} image={require('../assets/homeFeed/emmily.png')} />
+          showsHorizontalScrollIndicator={false} style={styles.contentContainer}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+          >
+            {
+              followingUser.map( user => {
+                const profileUrl = `${BACKEND_URL}/${user?.followingId?.profile?.replace(/\\/g,'/')}`;
+                return(
+                  <TouchableOpacity key={user._id}>
+                    <FollowCard name={user?.followingId?.name} image={String(profileUrl)} />
+                  </TouchableOpacity>
+                )
+              })
+            }
             
           </ScrollView>
         )}
