@@ -1,27 +1,92 @@
-import React from "react";
-import { View, Text, Image, StyleSheet, Dimensions } from "react-native";
+import React, {useContext, useState} from 'react';
+import {
+  View,
+  Text,
+  Image,
+  StyleSheet,
+  Dimensions,
+  TouchableOpacity,
+} from 'react-native';
+import {UserContext} from '../../utils/context/user-context';
+import { getDataFromStore } from '../../store';
+import axios from 'axios';
+import { BASE_URL } from '../../utils/constant';
 
-const Width = Dimensions.get("window").width;
-const bannerWidth = Width * 0.4 ; 
+const Width = Dimensions.get('window').width;
+const bannerWidth = Width * 0.4;
 
+export default function DiscoverCard({name, image, id}) {
+  const {
+    following,
+    user: userCon,
+  } = useContext(UserContext);
 
-export default function DiscoverCard({ name, image }) {
+  const [followingIds, setFollowingIds] = useState(
+    following.map(user => user.followingId._id),
+  );
+
+  const isFollowing = userid => {
+    // console.log('is follwing passed it ',id)
+    return followingIds.includes(userid);
+  };
+
+  const handleFollowToggle = async targetId => {
+    const token = await getDataFromStore('token');
+    const payload = {
+      token: token,
+      followerId: userCon._id,
+      followingId: targetId,
+    };
+    try {
+      if (isFollowing(targetId)) {
+        // un follow logic
+        try {
+          const response = await axios.delete(`${BASE_URL}/follow/unfollow`, {
+            data: payload,
+          });
+          console.log('response unfollow', response);
+          setFollowingIds(prev => prev.filter(id => id !== targetId));
+        } catch (err) {
+          console.log('error while unfollowing', err.response);
+        }
+      } else {
+        // follow logic
+        try {
+          const response = await axios.post(
+            `${BASE_URL}/follow/follow`,
+            payload,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            },
+          );
+          console.log('response', response);
+          setFollowingIds(prev => [...prev, targetId]);
+        } catch (err) {
+          console.log('error while following', err.response);
+        }
+      }
+    } catch (err) {
+      console.log('Follow toggle failed', err);
+    }
+  };
+
   return (
     <View style={styles.discovercontainer}>
       <View style={styles.header}>
-        <View style={{ flexDirection: "row" }}>
-          <Image
-            style={styles.profileImage}
-            source={{ uri: String(image)}}
-          />
+        <View style={{flexDirection: 'row'}}>
+          <Image style={styles.profileImage} source={{uri: String(image)}} />
           <View>
             <Text style={styles.name}>{name}</Text>
             <Text style={styles.timestamp}>6 hour ago</Text>
           </View>
         </View>
-        <View>
-          <Text style={styles.followBtn}>+ Follow</Text>
-        </View>
+        <TouchableOpacity onPress={() => handleFollowToggle(id)}>
+          <Text style={styles.followBtn}>
+            {isFollowing(id) ? 'Unfollow' : 'Follow'}
+          </Text>
+        </TouchableOpacity>
       </View>
 
       {/* <Image
@@ -57,9 +122,9 @@ const styles = StyleSheet.create({
     // borderRadius: 10
   },
   header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   profileImage: {
     width: 40,
@@ -68,22 +133,22 @@ const styles = StyleSheet.create({
     marginRight: 20,
   },
   name: {
-    color: "white",
-    fontWeight: "600",
+    color: 'white',
+    fontWeight: '600',
     fontSize: 14,
   },
   timestamp: {
-    color: "#94A3B8",
-    fontWeight: "600",
+    color: '#94A3B8',
+    fontWeight: '600',
     fontSize: 8,
   },
   followBtn: {
     fontSize: 8,
-    fontWeight: "600",
-    color: "#D4ACFB",
+    fontWeight: '600',
+    color: '#D4ACFB',
     borderWidth: 1,
     borderRadius: 50,
-    borderColor: "#D4ACFB",
+    borderColor: '#D4ACFB',
     paddingHorizontal: 10,
     paddingVertical: 3,
   },
@@ -95,8 +160,8 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   iconRow: {
-    flexDirection: "row",
-    justifyContent: "space-around",
+    flexDirection: 'row',
+    justifyContent: 'space-around',
     width: bannerWidth,
   },
   icon: {

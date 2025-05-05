@@ -48,7 +48,7 @@ export const UserContextProvider = ({children}) => {
       setFollowers(response?.data?.data);
       return response?.data?.data;
     } catch (error) {
-      console.log('error fetching all users', error);
+      console.log('error fetching all users', error.response);
     }
   };
 

@@ -8,7 +8,6 @@ import { BACKEND_URL, BASE_URL } from "../utils/constant";
 import { UserContext } from "../utils/context/user-context";
 import { getDataFromStore } from "../store";
 
-
 export default function Discover() {
   const [activeTab, setActiveTab] = useState("discover");
   const [discoverUser, setDiscoverUser] = useState([]);
@@ -127,7 +126,7 @@ export default function Discover() {
                 const profileUrl = `${BACKEND_URL}/${user.profile.replace(/\\/g, '/')}`;
                 return(
                   <TouchableOpacity onPress={() => handleFollow(user._id)} key={user._id}>
-                    <DiscoverCard  name={user.name} image={ String(profileUrl)} />
+                    <DiscoverCard id={user._id} name={user.name} image={ String(profileUrl)} />
                   </TouchableOpacity>
               )})
             }

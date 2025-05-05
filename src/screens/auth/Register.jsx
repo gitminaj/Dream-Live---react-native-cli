@@ -9,6 +9,7 @@ import {
   Platform,
   PermissionsAndroid,
   TextInput,
+  useColorScheme 
 } from 'react-native';
 const {height} = Dimensions.get('window');
 import {useNavigation} from '@react-navigation/native';
@@ -31,6 +32,7 @@ import IconEye from 'react-native-vector-icons/Feather';
 import {InputWithIcon} from '../../components/InputWithIcon';
 
 export default function Register() {
+  const colorScheme = useColorScheme();
   const [error, setError] = useState(''); 
   const [fieldErrors, setFieldErrors] = useState({
     name: false,
@@ -345,10 +347,10 @@ export default function Register() {
               onValueChange={value => handleChange('gender', value)}
               style={genderInputStyles.picker}
               dropdownIconColor="#8C8C8C">
-              <Picker.Item label="Gender" value="" color="#8C8C8C" />
-              <Picker.Item label="Male" value="Male" color="white" />
-              <Picker.Item label="Female" value="Female" color="white" />
-              <Picker.Item label="Other" value="Other" color="white" />
+              <Picker.Item label="Gender" value="" color={colorScheme === 'dark' ? '#aaa' : '#555'} />
+              <Picker.Item label="Male" value="Male" color={colorScheme === 'dark' ? '#aaa' : '#555'} />
+              <Picker.Item label="Female" value="Female" color={colorScheme === 'dark' ? '#aaa' : '#555'} />
+              <Picker.Item label="Other" value="Other" color={colorScheme === 'dark' ? '#aaa' : '#555'} />
             </Picker>
           </View>
 

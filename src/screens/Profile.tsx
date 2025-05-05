@@ -110,11 +110,11 @@ const Profile = () => {
             <Text style={styles.statLabel}>Visitors</Text>
           </View>
           <TouchableOpacity onPress={ () => navigation.navigate('Following') } style={styles.statItem}>
-            <Text style={styles.statValue}>{following.length}</Text>
+            <Text style={styles.statValue}>{following?.length}</Text>
             <Text style={styles.statLabel}>Following</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={ () => navigation.navigate('Followers') } style={styles.statItem}>
-            <Text style={styles.statValue}>{followers.length}</Text>
+            <Text style={styles.statValue}>{followers?.length}</Text>
             <Text style={styles.statLabel}>Followers</Text>
           </TouchableOpacity>
         </View>
