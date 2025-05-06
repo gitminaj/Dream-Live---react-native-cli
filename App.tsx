@@ -15,6 +15,9 @@ import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import LiveAudioRoom from './src/screens/LiveAudioRoom';
 import Followers from './src/screens/Followers';
 import Following from './src/screens/Following';
+import MessageList from './src/screens/MessageList';
+import VipRules from './src/screens/VipRules';
+import VipDetails from './src/screens/VipDetails';
 
 import { UserContextProvider } from './src/utils/context/user-context';
 
@@ -40,6 +43,9 @@ function App(): React.JSX.Element {
           <Stack.Screen name="LiveAudioRoom" component={LiveAudioRoom} />
           <Stack.Screen name="Followers" component={Followers} />
           <Stack.Screen name="Following" component={Following} />
+          <Stack.Screen name="MessageList" component={MessageList} />
+          <Stack.Screen name="VipRules" component={VipRules} />
+          <Stack.Screen name="VipDetails" component={VipDetails} />
         </Stack.Navigator>
       </NavigationContainer>
     </UserContextProvider>

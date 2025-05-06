@@ -234,8 +234,19 @@ const Profile = () => {
               icon={<AntDesign name="setting" size={20} color="#8D96A8" />}
               title="Settings"
             />
+              <MenuItem
+                icon={<AntDesign name="setting" size={20} color="#8D96A8" />}
+                title="VIP Rules"
+                onPress={() => navigation.navigate('VipRules')}
+              />
+              {/* <MenuItem
+                icon={<AntDesign name="setting" size={20} color="#8D96A8" />}
+                title="VIP Details"
+                onPress={() => navigation.navigate('VipDetails')}
+              /> */}
           </View>
         </View>
+        
       </ScrollView>
     </SafeAreaView>
   );

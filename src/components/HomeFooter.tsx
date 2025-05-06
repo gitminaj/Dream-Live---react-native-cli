@@ -1,6 +1,8 @@
-import { View, StyleSheet, Text, Image } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import { View, StyleSheet, Text, Image, TouchableOpacity } from "react-native";
 
 export default function HomeFooter() {
+  const navigation = useNavigation();
   return (
     <>
       <View style={styles.footerContainer}>
@@ -23,14 +25,14 @@ export default function HomeFooter() {
           <Text style={styles.footerText}>Games</Text>
 
           </View>
-          <View>
+          <TouchableOpacity onPress={() => navigation.navigate('VipRules')}>
             <Image
               resizeMode="contain"
               style={{ width: 25, height: 25}}
               source={require("../assets/daimond.png")}
             />
             <Text style={styles.footerText}>Store</Text>
-          </View>
+          </TouchableOpacity>
           <View>
             <Image
               resizeMode="contain"
@@ -39,14 +41,14 @@ export default function HomeFooter() {
             />
             <Text style={styles.footerText}>Audio</Text>
           </View>
-        <View>
+        <TouchableOpacity onPress={() => navigation.navigate('MessageList')}>
         <Image
               resizeMode="contain"
               style={{ width: 25, height: 25 }}
               source={require("../assets/message.png")}
             />
           <Text style={styles.footerText}>Message</Text>
-        </View>
+        </TouchableOpacity >
       </View>
     </>
   );

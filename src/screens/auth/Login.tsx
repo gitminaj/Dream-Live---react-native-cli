@@ -166,14 +166,14 @@ export default function Login() {
               <Text style={styles.underlineText}> register now</Text></Text>
             </TouchableOpacity>
           </View>
-          <View >
+          {/* <View >
           <TouchableOpacity onPress={ () => navigation.navigate("Home")} >
               <Text style={styles.bottomText}>Home</Text>
               </TouchableOpacity>
             <TouchableOpacity onPress={ () => navigation.navigate("Discover")} >
               <Text style={styles.bottomText}>discover</Text>
               </TouchableOpacity>
-          </View>
+          </View> */}
         </View>
       </View>
     </>

@@ -94,7 +94,7 @@ export default function EmailVerification() {
         }
       );
       console.log('Registration response:', response);
-      navigation.navigate('Login');
+      navigation.replace('Login');
     } catch (err) {
       console.log('Registration error:', err?.response?.data);
       setError(err.response?.data?.message || 'Registration failed');
