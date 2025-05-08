@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Image, ScrollView } from "react-native";
 import Icon from "react-native-vector-icons/Entypo";
 
 
-export default function DiscoverNFollow() {
+export default function Chat() {
 
   return (
     <>

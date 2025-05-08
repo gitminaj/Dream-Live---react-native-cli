@@ -1,5 +1,8 @@
 // import React from 'react';
 import {NavigationContainer} from '@react-navigation/native';
+import {createNativeStackNavigator} from '@react-navigation/native-stack';
+import { Chat, OverlayProvider } from 'stream-chat-react-native';
+
 import Welcome from './src/screens/Welcome';
 import Third from './src/screens/Third';
 import OnBoarding from './src/screens/OnBoarding';
@@ -9,17 +12,18 @@ import Login from './src/screens/auth/Login';
 import VerifyEmail from './src/screens/auth/VerifyEmail';
 import Home from './src/screens/Home';
 import Discover from './src/screens/Discover';
-import Chat from './src/screens/Chat';
+import ChatScreen from './src/screens/Chat';
 import Profile from './src/screens/Profile';
-import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import LiveAudioRoom from './src/screens/LiveAudioRoom';
 import Followers from './src/screens/Followers';
 import Following from './src/screens/Following';
 import MessageList from './src/screens/MessageList';
 import VipRules from './src/screens/VipRules';
 import VipDetails from './src/screens/VipDetails';
+import CreatePost from './src/screens/CreatePost';
 
 import { UserContextProvider } from './src/utils/context/user-context';
+import { streamClient } from './src/utils/streamClient';
 
 
 const Stack = createNativeStackNavigator();
@@ -27,27 +31,32 @@ const Stack = createNativeStackNavigator();
 function App(): React.JSX.Element {
   return (
     <UserContextProvider>
-      <NavigationContainer>
-        <Stack.Navigator screenOptions={{ headerShown: false }} >
-          <Stack.Screen name="Welcome" component={Welcome} />
-          <Stack.Screen name="Third" component={Third} />
-          <Stack.Screen name="OnBoarding" component={OnBoarding} />
-          <Stack.Screen name="OnBoardingSlider" component={OnBoardingSlider} />
-          <Stack.Screen name="Register" component={Register} />
-          <Stack.Screen name="Login" component={Login} />
-          <Stack.Screen name="Home" component={Home} />
-          <Stack.Screen name="Discover" component={Discover} />
-          <Stack.Screen name="VerifyEmail" component={VerifyEmail} />
-          <Stack.Screen name="Chat" component={Chat} />
-          <Stack.Screen name="Profile" component={Profile} />
-          <Stack.Screen name="LiveAudioRoom" component={LiveAudioRoom} />
-          <Stack.Screen name="Followers" component={Followers} />
-          <Stack.Screen name="Following" component={Following} />
-          <Stack.Screen name="MessageList" component={MessageList} />
-          <Stack.Screen name="VipRules" component={VipRules} />
-          <Stack.Screen name="VipDetails" component={VipDetails} />
-        </Stack.Navigator>
-      </NavigationContainer>
+      <OverlayProvider>
+        <Chat client={streamClient}>
+          <NavigationContainer>
+            <Stack.Navigator screenOptions={{ headerShown: false }} >
+              <Stack.Screen name="Welcome" component={Welcome} />
+              <Stack.Screen name="Third" component={Third} />
+              <Stack.Screen name="OnBoarding" component={OnBoarding} />
+              <Stack.Screen name="OnBoardingSlider" component={OnBoardingSlider} />
+              <Stack.Screen name="Register" component={Register} />
+              <Stack.Screen name="Login" component={Login} />
+              <Stack.Screen name="Home" component={Home} />
+              <Stack.Screen name="Discover" component={Discover} />
+              <Stack.Screen name="VerifyEmail" component={VerifyEmail} />
+              <Stack.Screen name="Chat" component={ChatScreen} />
+              <Stack.Screen name="Profile" component={Profile} />
+              <Stack.Screen name="LiveAudioRoom" component={LiveAudioRoom} />
+              <Stack.Screen name="Followers" component={Followers} />
+              <Stack.Screen name="Following" component={Following} />
+              <Stack.Screen name="MessageList" component={MessageList} />
+              <Stack.Screen name="VipRules" component={VipRules} />
+              <Stack.Screen name="VipDetails" component={VipDetails} />
+              <Stack.Screen name="CreatePost" component={CreatePost} />
+            </Stack.Navigator>
+          </NavigationContainer>
+        </Chat>
+      </OverlayProvider>
     </UserContextProvider>
 
   );
