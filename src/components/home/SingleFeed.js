@@ -29,7 +29,7 @@ export default function SingleFeed({name, image}) {
                     <View style={styles.chitChatContainer}>
                       <Image 
                         style={{width: 20, height: 20}} 
-                        source={{uri: "https://s3-alpha-sig.figma.com/img/589c/b8a3/30edda1bc2b729bc41d50cfae1c8f0c1?Expires=1745798400&Key-Pair-Id=APKAQ4GOSFWCW27IBOMQ&Signature=p5Y1RJd7wCI947xAfZtxzByzq5SHZYTU4HhQ8WX-EdAgxop3Cpzws62md8sVQc-FGAM6o4VgcBxd2K-JrQbxx3hWlI3V1XuCsmzvqeRL0iBKrpUFMIw6olUbM8bBGgBYp51pNMi-GiJCRWjX9vQtr5QLSWuzte8KnRFOOroSKdI~itJhYT1YeD2a57V8uwSQhhA59hHQEyerQ0qc-PCX0Q6Hz6B880UT14DoWUsLBIx7FnoFpPBE8JklcJia6qICoYlWzTCJ9Cr12rkXTea~UwWm9N4cofrklbczBBivB7Nl-xmLbxK5BukqLPfxDQl3-up3HjVvUuBAd4UzuSJlpA__"}} 
+                        source={require('../../assets/homeFeed/chitchat.png')} 
                       />
                       <Text style={styles.chitChatText}>Chit chat</Text>
                     </View>

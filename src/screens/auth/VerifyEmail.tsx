@@ -51,55 +51,45 @@ export default function EmailVerification() {
     }
   };
 
-  const handleVerifyOtp = async () => {
-    const userEnteredOtp = otp.join('');
-  
-    console.log('Form data from route:', formData);
-    console.log('File data from route:', fileData);
-    console.log('OTP entered:', userEnteredOtp);
-  
-    // Create a new FormData instance for multipart/form-data submission
-    const formDataToSubmit = new FormData();
-    
-    // Add all form fields to FormData
-    Object.keys(formData).forEach(key => {
-      formDataToSubmit.append(key, formData[key]);
-    });
-    
-    // Add OTP to FormData
-    formDataToSubmit.append('otp', userEnteredOtp.trim());
+ const handleVerifyOtp = async () => {
+  const userEnteredOtp = otp.join('');
 
-    const getDefaultImage = () => ({
-      uri: Image.resolveAssetSource(require('../../assets/profileIcon.png')).uri,
-      type: 'image/png',
-      name: 'default.png',
-    });
-    
-    // Add profile image if available
-    if (fileData) {
-      formDataToSubmit.append('profile', fileData);
-    }else{
-      formDataToSubmit.append('profile', getDefaultImage());
-    }
-  
-    try {
-      console.log('Submitting FormData payload',formDataToSubmit);
-      const response = await axios.post(
-        `${BASE_URL}/auth/register`, 
-        formDataToSubmit,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        }
-      );
-      console.log('Registration response:', response);
-      navigation.replace('Login');
-    } catch (err) {
-      console.log('Registration error:', err?.response?.data);
-      setError(err.response?.data?.message || 'Registration failed');
-    }
-  };
+  console.log('Form data from route:', formData);
+  console.log('File data from route:', fileData);
+  console.log('OTP entered:', userEnteredOtp);
+
+  const formDataToSubmit = new FormData();
+
+  Object.keys(formData).forEach(key => {
+    formDataToSubmit.append(key, formData[key]);
+  });
+
+  formDataToSubmit.append('otp', userEnteredOtp.trim());
+
+  // Only add profile if user selected one
+  if (fileData) {
+    formDataToSubmit.append('profile', fileData);
+  }
+
+  try {
+    console.log('Submitting FormData payload', formDataToSubmit);
+    const response = await axios.post(
+      `${BASE_URL}/auth/register`,
+      formDataToSubmit,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+    console.log('Registration response:', response);
+    navigation.replace('Login');
+  } catch (err) {
+    console.log('Registration error:', JSON.stringify(err, null, 2));
+    setError((err?.response?.data?.message || err?.response?.data?.error) || 'Registration failed');
+  }
+};
+
 
   return (
     <KeyboardAvoidingView

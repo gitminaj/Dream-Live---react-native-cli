@@ -18,7 +18,7 @@ export default function FollowCard({ name, image }) {
             source={{uri: String(image)}}
           />
           <View>
-            <Text style={styles.name}>{name}</Text>
+            <Text style={styles.name}>{name || 'unknow'}</Text>
             <Text style={styles.timestamp}>6 hour ago</Text>
           </View>
         </View>

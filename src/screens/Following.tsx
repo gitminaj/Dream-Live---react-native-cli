@@ -28,7 +28,7 @@ export default function Following() {
     refreshAllUserData,
   } = useContext(UserContext);
 
-  const [followingIds, setFollowingIds] = useState(following.map(user => user.followingId._id));
+  const [followingIds, setFollowingIds] = useState(following.map(user => user?.followingId?._id));
 
     console.log('following ', following)
     console.log('follower ', followers)
@@ -110,7 +110,6 @@ const handleFollowToggle = async (targetId) => {
         <View style={styles.header}>
           <View style={{flexDirection: 'row'}}>
             <TouchableOpacity
-              onPress={() => setActiveTab('discover')}
               style={styles.tabButton}>
               <Text
                 style={{
@@ -135,12 +134,12 @@ const handleFollowToggle = async (targetId) => {
           showsHorizontalScrollIndicator={false}
           style={styles.contentContainer}>
           {following.map(user => {
-            const profileUrl = `${BACKEND_URL}/${user.followingId.profile.replace(
+            const profileUrl = `${BACKEND_URL}/${user?.followingId?.profile.replace(
               /\\/g,
               '/',
             )}`;
             return (
-              <View style={styles.discovercontainer} key={user.followingId._id}>
+              <View style={styles.discovercontainer} key={user?.followingId?._id}>
                 <View style={styles.header}>
                   <View style={{flexDirection: 'row'}}>
                     <Image
@@ -148,15 +147,15 @@ const handleFollowToggle = async (targetId) => {
                       source={{uri: profileUrl}}
                     />
                     <View>
-                      <Text style={styles.name}>{user.followingId.name}</Text>
-                      <Text style={styles.timestamp}>6 hour ago</Text>
+                      <Text style={styles.name}>{user?.followingId?.name || 'unknow'}</Text>
+                      <Text style={styles?.timestamp}>6 hour ago</Text>
                     </View>
                   </View>
                   <View>
                     <TouchableOpacity
-                      onPress={() => handleFollowToggle(user.followingId._id)}>
+                      onPress={() => handleFollowToggle(user?.followingId?._id)}>
                       <Text style={styles.followBtn}>
-                        {isFollowing(user.followingId._id)
+                        {isFollowing(user?.followingId?._id)
                           ? 'Unfollow'
                           : 'Follow'}
                       </Text>

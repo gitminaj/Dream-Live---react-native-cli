@@ -29,7 +29,7 @@ export default function Discover() {
 
   const getDiscoverUser = async () =>{
     try {
-      const response = await axios.get(`${BASE_URL}/follow/discover/${userCon._id}`);
+      const response = await axios.get(`${BASE_URL}/follow/discover/${userCon?._id}`);
 
       console.log('all user', response);
       setDiscoverUser(response?.data);
@@ -40,7 +40,7 @@ export default function Discover() {
 
   const getFollowingUser = async () =>{
     try {
-      const response = await axios.get(`${BASE_URL}/follow/following/${userCon._id}`);
+      const response = await axios.get(`${BASE_URL}/follow/following/${userCon?._id}`);
 
       console.log('following user', response);
       setFollowingUser(response?.data?.data);
@@ -123,10 +123,10 @@ export default function Discover() {
           showsHorizontalScrollIndicator={false} style={styles.contentContainer}>
             {
               discoverUser.map((user) => {
-                const profileUrl = `${BACKEND_URL}/${user.profile.replace(/\\/g, '/')}`;
+                const profileUrl = `${BACKEND_URL}/${user?.profile.replace(/\\/g, '/')}`;
                 return(
                   <TouchableOpacity onPress={() => handleFollow(user._id)} key={user._id}>
-                    <DiscoverCard id={user._id} name={user.name} image={ String(profileUrl)} />
+                    <DiscoverCard id={user?._id} name={user?.name} image={ String(profileUrl)} />
                   </TouchableOpacity>
               )})
             }
@@ -146,7 +146,7 @@ export default function Discover() {
               followingUser.map( user => {
                 const profileUrl = `${BACKEND_URL}/${user?.followingId?.profile?.replace(/\\/g,'/')}`;
                 return(
-                  <TouchableOpacity key={user._id}>
+                  <TouchableOpacity key={user?._id}>
                     <FollowCard name={user?.followingId?.name} image={String(profileUrl)} />
                   </TouchableOpacity>
                 )

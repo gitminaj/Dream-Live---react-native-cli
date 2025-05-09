@@ -22,7 +22,7 @@ export default function DiscoverCard({name, image, id}) {
   } = useContext(UserContext);
 
   const [followingIds, setFollowingIds] = useState(
-    following.map(user => user.followingId._id),
+    following.map(user => user?.followingId?._id),
   );
 
   const isFollowing = userid => {
