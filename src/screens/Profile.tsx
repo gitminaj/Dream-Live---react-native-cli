@@ -85,12 +85,12 @@ const Profile = () => {
         <View style={{flexDirection: 'row', justifyContent: 'space-between'}}>
           <View style={styles.profileHeader}>
             <Image
-              source={{ uri: `${BACKEND_URL}/${user.profile.replace(/\\/g, '/')}`}}
+              source={{ uri: `${BACKEND_URL}/${user?.profile?.replace(/\\/g, '/')}`}}
               style={styles.profileImage}
               defaultSource={require('../assets/profileIcon.png')}
             />
             <View>
-              <Text style={styles.userName}>{user.name}</Text>
+              <Text style={styles.userName}>{user?.name}</Text>
               {/* <Text style={styles.userId}>ID: {user._id}</Text> */}
             </View>
           </View>
@@ -171,6 +171,11 @@ const Profile = () => {
             <MenuItem
               icon={<MyRoomIcon name="key-outline" size={20} color="#8D96A8" />}
               title="My Room"
+            />
+            <MenuItem
+              icon={<MyRoomIcon name="key-outline" size={20} color="#8D96A8" />}
+              title="My Posts"
+              onPress={() => navigation.navigate('PostsScreen')}
             />
           </View>
           <View style={styles.agencyContainer}>

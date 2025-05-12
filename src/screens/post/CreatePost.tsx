@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,32 +10,13 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-  Dimensions
+  Dimensions,
+  Alert,
 } from 'react-native';
 import Video from 'react-native-video';
-
-// You'll need to set up a storage solution like Firebase Storage or AWS S3
-// This is a placeholder for your actual post submission logic
-const submitPost = async (caption, media) => {
-  // Example implementation with Firebase:
-  // 1. Upload media to storage
-  // 2. Save post data to Firestore
-  // 3. Return success/failure
-  
-  // Simulate network request
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({
-        success: true,
-        postId: 'post_' + Date.now(),
-        timestamp: new Date().toISOString(),
-        caption,
-        mediaUrl: media.uri,
-        mediaType: media.type
-      });
-    }, 1500);
-  });
-};
+import { BASE_URL } from '../../utils/constant';
+import axios from 'axios';
+import { getDataFromStore } from '../../store';
 
 const CreatePost = ({ route, navigation }) => {
   const { media } = route.params;
@@ -43,49 +24,87 @@ const CreatePost = ({ route, navigation }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isVideo = media.type && media.type.includes('video');
   const screenWidth = Dimensions.get('window').width;
-  
+
   const handleSubmitPost = async () => {
     if (isSubmitting) return;
-    
+    if (!caption.trim()) {
+      Alert.alert('Missing Caption', 'Please add a caption to your post');
+      return;
+    }
+
     setIsSubmitting(true);
+    
+    // Create a form data object
+    const formData = new FormData();
+    formData.append('body', caption);
+    
+    // Append the media file
+    const fileExtension = media.uri.split('.').pop();
+    const mimeType = isVideo 
+      ? `video/${fileExtension}` 
+      : `image/${fileExtension}`;
+    
+    formData.append('postUrl', {
+      uri: Platform.OS === 'ios' ? media.uri.replace('file://', '') : media.uri,
+      type: media.type || mimeType,
+      name: `post-media-${Date.now()}.${fileExtension}`,
+    });
+
     try {
-      const result = await submitPost(caption, media);
-      
-      if (result.success) {
-        // Add the post to your local state/context if needed
-        // For example, you might have a PostsContext that stores all posts
-        
-        // Navigate back to home or the posts feed
-        navigation.navigate('Home', { newPost: result });
+      const token = getDataFromStore('token')
+      const response = await axios.post(
+        `${BASE_URL}/post/create-post`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            // Add authorization header if needed
+            'Authorization': `Bearer ${token}`,
+          },
+        },
+      );
+
+      console.log('response',response)
+
+      if (response.data && response.data.success) {
+        // Navigate back to home or the posts feed with the new post data
+        Alert.alert('Post created successfully!','Post created successfully!')
+        navigation.navigate('Home', { newPost: response.data.post });
+      } else {
+        throw new Error(response.data?.message || 'Failed to create post');
       }
     } catch (error) {
       console.error('Error submitting post:', error);
-      alert('Failed to submit post. Please try again.');
+      Alert.alert(
+        'Post Failed',
+        error.response?.data?.message || error.message || 'Failed to submit post. Please try again.'
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
-  
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
-    >
+      style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}>
             <Text style={styles.backButtonText}>Cancel</Text>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>New Post</Text>
-          <TouchableOpacity 
-            onPress={handleSubmitPost} 
+          <TouchableOpacity
+            onPress={handleSubmitPost}
             style={[styles.postButton, (!caption.trim() || isSubmitting) && styles.disabledButton]}
             disabled={!caption.trim() || isSubmitting}
           >
             <Text style={styles.postButtonText}>Post</Text>
           </TouchableOpacity>
         </View>
-        
+
         <View style={styles.mediaPreviewContainer}>
           {isVideo ? (
             <Video
@@ -104,7 +123,7 @@ const CreatePost = ({ route, navigation }) => {
             />
           )}
         </View>
-        
+
         <View style={styles.captionContainer}>
           <TextInput
             style={styles.captionInput}
@@ -116,7 +135,7 @@ const CreatePost = ({ route, navigation }) => {
           />
         </View>
       </ScrollView>
-      
+
       {isSubmitting && (
         <View style={styles.loadingOverlay}>
           <ActivityIndicator size="large" color="#1E293B" />
@@ -126,7 +145,6 @@ const CreatePost = ({ route, navigation }) => {
     </KeyboardAvoidingView>
   );
 };
-
 
 const styles = StyleSheet.create({
   container: {

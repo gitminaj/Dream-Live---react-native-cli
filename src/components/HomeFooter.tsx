@@ -52,7 +52,7 @@ export default function HomeFooter() {
         console.log('User cancelled camera');
       } else if (response.errorCode) {
         console.log('Camera Error: ', response.errorMessage);
-      } else {
+      } else if (response.assets && response.assets.length > 0) {
         // Navigate to create post screen with the image
         navigation.navigate('CreatePost', { 
           media: {
@@ -76,7 +76,7 @@ export default function HomeFooter() {
         console.log('User cancelled image picker');
       } else if (response.errorCode) {
         console.log('ImagePicker Error: ', response.errorMessage);
-      } else {
+      } else if (response.assets && response.assets.length > 0) {
         // Navigate to create post screen with the image
         navigation.navigate('CreatePost', { 
           media: {
@@ -103,7 +103,7 @@ export default function HomeFooter() {
         console.log('User cancelled video recording');
       } else if (response.errorCode) {
         console.log('Camera Error: ', response.errorMessage);
-      } else {
+      } else if (response.assets && response.assets.length > 0) {
         // Navigate to create post screen with the video
         navigation.navigate('CreatePost', { 
           media: {
@@ -138,11 +138,6 @@ export default function HomeFooter() {
          </View>
         
         <TouchableOpacity onPress={handlePostPress}>
-          {/* <Image
-            resizeMode="contain"
-            style={{ width: 25, height: 25}}
-            source={require("../assets/daimond.png")}
-          /> */}
           <Feather name='plus-circle' style={{  color: 'white' }} size={30} />
           <Text style={styles.footerText}>Post</Text>
         </TouchableOpacity>

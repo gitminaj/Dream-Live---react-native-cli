@@ -20,7 +20,8 @@ import Following from './src/screens/Following';
 import MessageList from './src/screens/MessageList';
 import VipRules from './src/screens/VipRules';
 import VipDetails from './src/screens/VipDetails';
-import CreatePost from './src/screens/CreatePost';
+import CreatePost from './src/screens/post/CreatePost';
+import PostsScreen from './src/screens/post/PostsScreen';
 
 import { UserContextProvider } from './src/utils/context/user-context';
 import { streamClient } from './src/utils/streamClient';
@@ -53,6 +54,7 @@ function App(): React.JSX.Element {
               <Stack.Screen name="VipRules" component={VipRules} />
               <Stack.Screen name="VipDetails" component={VipDetails} />
               <Stack.Screen name="CreatePost" component={CreatePost} />
+              <Stack.Screen name="PostsScreen" component={PostsScreen} />
             </Stack.Navigator>
           </NavigationContainer>
         </Chat>
