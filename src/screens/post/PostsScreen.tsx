@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useRef} from 'react';
 import {
   View,
   Text,
@@ -15,8 +15,11 @@ import axios from 'axios';
 import {BACKEND_URL, BASE_URL} from '../../utils/constant';
 import {getDataFromStore} from '../../store';
 import LinearGradient from 'react-native-linear-gradient';
+import Video from 'react-native-video';
+import { useFormateDate } from '../../utils/useFormateDate'
 
 import AntDesign from 'react-native-vector-icons/AntDesign';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 const {width} = Dimensions.get('window');
 
@@ -25,7 +28,8 @@ const PostsScreen = ({navigation}) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
-
+  const [playingVideos, setPlayingVideos] = useState({});
+  
   // Function to fetch posts
   const token = getDataFromStore('token');
   const fetchPosts = async () => {
@@ -36,7 +40,18 @@ const PostsScreen = ({navigation}) => {
           Authorization: `Bearer ${token}`,
         },
       });
-      setPosts(response?.data?.data);
+      const postsData = response?.data?.data || [];
+      
+      // Initialize playingVideos state with all videos paused
+      const initialPlayState = {};
+      postsData.forEach(post => {
+        if (isVideoFile(`${BACKEND_URL}/${post?.postUrl?.replace(/\\/g, '/')}`)) {
+          initialPlayState[post._id] = false; // all videos start paused
+        }
+      });
+      
+      setPlayingVideos(initialPlayState);
+      setPosts(postsData);
     } catch (err) {
       console.error('Error fetching posts:', err);
       setError('Unable to load posts. Please try again later.');
@@ -84,7 +99,7 @@ const PostsScreen = ({navigation}) => {
 
               console.log('Post deleted', response);
               if (response?.data?.success) {
-                Alert.alert('Post deleted successfuly!', 'Your post is deleted');
+                Alert.alert('success', 'Your post is deleted');
                 fetchPosts();
               }
             } catch (err) {
@@ -97,70 +112,105 @@ const PostsScreen = ({navigation}) => {
     );
   };
 
+  const isVideoFile = (url) => {
+    if (!url) return false;
+    const videoExtensions = ['.mp4', '.mov', '.avi', '.wmv', '.flv', '.webm', '.mkv', '.3gp'];
+    return videoExtensions.some(ext => url.toLowerCase().endsWith(ext));
+  };
+  
+  // Toggle video playback
+  const toggleVideoPlayback = (postId) => {
+    setPlayingVideos(prev => ({
+      ...prev,
+      [postId]: !prev[postId]
+    }));
+  };
+
   // Render each post item
-  const renderPostItem = ({item}) => (
-    <View style={styles.postContainer}>
-      {/* <View style={styles.postHeader}>
-        <Image
-          source={{ uri: `${BACKEND_URL}/${item?.authorAvatar?.replace(/\\/g, '/')}`}} 
-          style={styles.profileImage}
-        />
-        <View style={styles.userInfo}>
-          <Text style={styles.username}>{item.username || 'Anonymous'}</Text>
-          <Text style={styles.location}>{item.location || 'Somewhere'}</Text>
-        </View>
-        <TouchableOpacity style={styles.moreButton}>
-          <Text style={styles.moreButtonText}>...</Text>
+  const renderPostItem = ({item}) => {
+    const isVideo = isVideoFile(`${BACKEND_URL}/${item?.postUrl?.replace(/\\/g, '/')}`);
+    const isPlaying = playingVideos[item._id] || false;
+    
+    return (
+      <View style={styles.postContainer}>
+        <TouchableOpacity 
+          onPress={() => isVideo ? toggleVideoPlayback(item._id) : handlePostPress(item)}
+          activeOpacity={0.9}
+        >
+          {isVideo ? (
+            <View style={styles.videoContainer}>
+              <Video
+                source={{uri: `${BACKEND_URL}/${item?.postUrl?.replace(/\\/g, '/')}`}}
+                style={styles.postVideo}
+                resizeMode="cover"
+                paused={!isPlaying}
+                controls={false}
+                repeat={true}
+              />
+              {/* Play/Pause overlay button */}
+              {!isPlaying && (
+                <View style={styles.playButtonOverlay}>
+                  <Ionicons name="play" size={50} color="white" style={styles.playIcon} />
+                </View>
+              )}
+              {/* Small play/pause indicator in corner */}
+              {/* <TouchableOpacity 
+                style={styles.videoControlButton}
+                onPress={() => toggleVideoPlayback(item._id)}
+              >
+                <Ionicons 
+                  name={isPlaying ? "pause" : "play"} 
+                  size={20} 
+                  color="white" 
+                />
+              </TouchableOpacity> */}
+            </View>
+          ) : (
+            <Image
+              source={{uri: `${BACKEND_URL}/${item?.postUrl?.replace(/\\/g, '/')}`}}
+              style={styles.postImage}
+              resizeMode="cover"
+            />
+          )}
         </TouchableOpacity>
-      </View> */}
 
-      <TouchableOpacity onPress={() => handlePostPress(item)}>
-        <Image
-          source={{uri: `${BACKEND_URL}/${item?.postUrl?.replace(/\\/g, '/')}`}}
-          style={styles.postImage}
-          resizeMode="cover"
-        />
-      </TouchableOpacity>
-
-      <View style={styles.postActions}>
-        <View style={styles.actionIcons}>
-          <TouchableOpacity style={styles.actionIcon}>
-            <Text style={styles.actionIconText}>❤️</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionIcon}>
-            <Text style={styles.actionIconText}>💬</Text>
-          </TouchableOpacity>
-          {/* <TouchableOpacity style={styles.actionIcon}>
-            <Text style={styles.actionIconText}>➡️</Text>
-          </TouchableOpacity> */}
+        <View style={styles.postActions}>
+          <View style={styles.actionIcons}>
+            <TouchableOpacity style={styles.actionIcon}>
+              <Text style={styles.actionIconText}>❤️</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.actionIcon}>
+              <Text style={styles.actionIconText}>💬</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={{flexDirection: 'row'}}>
+            <TouchableOpacity style={styles.moreButton} onPress={() => navigation.navigate('UpdatePost', { post: item })}>
+              <AntDesign name="edit" size={15} style={{color: 'white'}} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.moreButton}
+              onPress={() => handleDelete(item._id)}>
+              <AntDesign name="delete" size={15} style={{color: 'white'}} />
+            </TouchableOpacity>
+          </View>
         </View>
-        <View style={{flexDirection: 'row'}}>
-          <TouchableOpacity style={styles.moreButton}>
-            <AntDesign name="edit" size={15} style={{color: 'white'}} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.moreButton}
-            onPress={() => handleDelete(item._id)}>
-            <AntDesign name="delete" size={15} style={{color: 'white'}} />
-          </TouchableOpacity>
-        </View>
-      </View>
 
-      <View style={styles.postDetails}>
-        <Text style={styles.likesText}>{item.likes || 0} likes</Text>
-        <Text style={styles.postDescription}>
-          <Text style={styles.username}>{item.username || 'Anonymous'} </Text>
-          {item.body}
-        </Text>
-        {item.comments && item.comments > 0 && (
-          <Text style={styles.commentsText}>
-            View all {item.comments} comments
+        <View style={styles.postDetails}>
+          <Text style={styles.likesText}>{item.likes || 0} likes</Text>
+          <Text style={styles.postDescription}>
+            <Text style={styles.username}>{item.username || 'You'} </Text>
+            {item.body}
           </Text>
-        )}
-        <Text style={styles.timePosted}>{item.createdAt || 'Just now'}</Text>
+          {item.comments && item.comments > 0 && (
+            <Text style={styles.commentsText}>
+              View all {item.comments} comments
+            </Text>
+          )}
+          <Text style={styles.timePosted}>{useFormateDate(item.createdAt) || 'Just now'}</Text>
+        </View>
       </View>
-    </View>
-  );
+    );
+  };
 
   // Loading state
   if (loading && !refreshing) {
@@ -207,7 +257,7 @@ const PostsScreen = ({navigation}) => {
             tintColor={'#5E81F4'}
           />
         }
-        ListHeaderComponent={<Text style={styles.headerText}>All Posts</Text>}
+        ListHeaderComponent={<Text style={styles.headerText}>My Posts</Text>}
         ListEmptyComponent={
           <Text style={styles.emptyText}>No posts available</Text>
         }
@@ -338,6 +388,40 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#8A96B8',
     marginTop: 20,
+  },
+  videoContainer: {
+    width: '100%',
+    height: 400,
+    backgroundColor: '#000',
+    position: 'relative',
+  },
+  postVideo: {
+    width: '100%',
+    height: '100%',
+  },
+  playButtonOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.2)',
+  },
+  playIcon: {
+    opacity: 0.9,
+  },
+  videoControlButton: {
+    position: 'absolute',
+    bottom: 10,
+    right: 10,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderRadius: 20,
+    width: 36,
+    height: 36,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 

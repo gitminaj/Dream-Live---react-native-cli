@@ -113,7 +113,7 @@ const CreatePost = ({ route, navigation }) => {
               controls={true}
               resizeMode="contain"
               repeat={true}
-              paused={false}
+              paused={true}
             />
           ) : (
             <Image

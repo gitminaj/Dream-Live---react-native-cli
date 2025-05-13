@@ -23,11 +23,6 @@ export default function Chat() {
                   <Icon name="dots-three-horizontal" size={20} style={styles.icon}></Icon>
                 </View>
               </View>
-           
-
-
-
-
       </View>
     </>
   );

@@ -45,11 +45,11 @@ export default function Login() {
           form
         )
         console.log('response', response);
-        const { token, user, streamToken } = response.data;
+        const { token, user } = response.data;
         
         await storeDataInStore('token', token);
         await storeDataInStore('user', user);
-        await storeDataInStore('streamToken', streamToken);
+        // await storeDataInStore('streamToken', streamToken);
         refreshAllUserData();
         navigation.replace('Home');
       } catch (err) {

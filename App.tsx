@@ -1,7 +1,7 @@
 // import React from 'react';
 import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
-import { Chat, OverlayProvider } from 'stream-chat-react-native';
+// import { Chat, OverlayProvider } from 'stream-chat-react-native';
 
 import Welcome from './src/screens/Welcome';
 import Third from './src/screens/Third';
@@ -22,9 +22,10 @@ import VipRules from './src/screens/VipRules';
 import VipDetails from './src/screens/VipDetails';
 import CreatePost from './src/screens/post/CreatePost';
 import PostsScreen from './src/screens/post/PostsScreen';
+import UpdatePost from './src/screens/post/UpdatePost';
 
 import { UserContextProvider } from './src/utils/context/user-context';
-import { streamClient } from './src/utils/streamClient';
+// import { streamClient } from './src/utils/streamClient';
 
 
 const Stack = createNativeStackNavigator();
@@ -32,8 +33,8 @@ const Stack = createNativeStackNavigator();
 function App(): React.JSX.Element {
   return (
     <UserContextProvider>
-      <OverlayProvider>
-        <Chat client={streamClient}>
+      {/* <OverlayProvider>
+        <Chat client={streamClient}> */}
           <NavigationContainer>
             <Stack.Navigator screenOptions={{ headerShown: false }} >
               <Stack.Screen name="Welcome" component={Welcome} />
@@ -55,10 +56,11 @@ function App(): React.JSX.Element {
               <Stack.Screen name="VipDetails" component={VipDetails} />
               <Stack.Screen name="CreatePost" component={CreatePost} />
               <Stack.Screen name="PostsScreen" component={PostsScreen} />
+              <Stack.Screen name="UpdatePost" component={UpdatePost} />
             </Stack.Navigator>
           </NavigationContainer>
-        </Chat>
-      </OverlayProvider>
+        {/* </Chat>
+      </OverlayProvider> */}
     </UserContextProvider>
 
   );

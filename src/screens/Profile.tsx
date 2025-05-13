@@ -173,7 +173,7 @@ const Profile = () => {
               title="My Room"
             />
             <MenuItem
-              icon={<MyRoomIcon name="key-outline" size={20} color="#8D96A8" />}
+              icon={<MaterialCommunityIcon name="post-outline" size={20} color="#8D96A8" />}
               title="My Posts"
               onPress={() => navigation.navigate('PostsScreen')}
             />
