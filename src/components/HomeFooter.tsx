@@ -1,119 +1,13 @@
 import { useNavigation } from "@react-navigation/native";
-import { View, StyleSheet, Text, Image, TouchableOpacity, ActionSheetIOS, Platform, Alert } from "react-native";
-import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
-import { useState } from 'react';
-
+import { View, StyleSheet, Text, Image, TouchableOpacity } from "react-native";
 import Feather from 'react-native-vector-icons/Feather';
 
 export default function HomeFooter() {
   const navigation = useNavigation();
   
   const handlePostPress = () => {
-    if (Platform.OS === 'ios') {
-      ActionSheetIOS.showActionSheetWithOptions(
-        {
-          options: ['Cancel', 'Take Photo', 'Choose from Gallery', 'Record Video'],
-          cancelButtonIndex: 0,
-        },
-        (buttonIndex) => {
-          if (buttonIndex === 1) {
-            takePhoto();
-          } else if (buttonIndex === 2) {
-            pickImage();
-          } else if (buttonIndex === 3) {
-            recordVideo();
-          }
-        }
-      );
-    } else {
-      // For Android, show a custom dialog or directly access gallery
-      Alert.alert(
-        'Create a Post',
-        'Choose an option',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Take Photo', onPress: takePhoto },
-          { text: 'Choose from Gallery', onPress: pickImage },
-          { text: 'Record Video', onPress: recordVideo },
-        ]
-      );
-    }
-  };
-
-  const takePhoto = () => {
-    const options = {
-      mediaType: 'photo',
-      quality: 1,
-      saveToPhotos: true,
-    };
-
-    launchCamera(options, (response) => {
-      if (response.didCancel) {
-        console.log('User cancelled camera');
-      } else if (response.errorCode) {
-        console.log('Camera Error: ', response.errorMessage);
-      } else if (response.assets && response.assets.length > 0) {
-        // Navigate to create post screen with the image
-        navigation.navigate('CreatePost', { 
-          media: {
-            uri: response.assets[0].uri,
-            type: response.assets[0].type,
-            name: response.assets[0].fileName
-          } 
-        });
-      }
-    });
-  };
-
-  const pickImage = () => {
-    const options = {
-      mediaType: 'mixed', // Can choose both photo and video
-      quality: 1,
-    };
-
-    launchImageLibrary(options, (response) => {
-      if (response.didCancel) {
-        console.log('User cancelled image picker');
-      } else if (response.errorCode) {
-        console.log('ImagePicker Error: ', response.errorMessage);
-      } else if (response.assets && response.assets.length > 0) {
-        // Navigate to create post screen with the image
-        navigation.navigate('CreatePost', { 
-          media: {
-            uri: response.assets[0].uri,
-            type: response.assets[0].type,
-            name: response.assets[0].fileName
-          } 
-        });
-      }
-    });
-  };
-
-  const recordVideo = () => {
-    const options = {
-      mediaType: 'video',
-      quality: 1,
-      videoQuality: 'high',
-      durationLimit: 60, // limit to 1 minute
-      saveToPhotos: true,
-    };
-
-    launchCamera(options, (response) => {
-      if (response.didCancel) {
-        console.log('User cancelled video recording');
-      } else if (response.errorCode) {
-        console.log('Camera Error: ', response.errorMessage);
-      } else if (response.assets && response.assets.length > 0) {
-        // Navigate to create post screen with the video
-        navigation.navigate('CreatePost', { 
-          media: {
-            uri: response.assets[0].uri,
-            type: response.assets[0].type,
-            name: response.assets[0].fileName
-          } 
-        });
-      }
-    });
+    // Navigate to our custom gallery screen
+    navigation.navigate('CustomGallery');
   };
 
   return (
