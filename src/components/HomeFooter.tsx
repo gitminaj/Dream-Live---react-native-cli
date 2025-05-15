@@ -1,3 +1,4 @@
+import React from "react";
 import { useNavigation } from "@react-navigation/native";
 import { View, StyleSheet, Text, Image, TouchableOpacity } from "react-native";
 import Feather from 'react-native-vector-icons/Feather';
@@ -6,7 +7,7 @@ export default function HomeFooter() {
   const navigation = useNavigation();
   
   const handlePostPress = () => {
-    // Navigate to our custom gallery screen
+    // Navigate to our new gallery picker component
     navigation.navigate('CustomGallery');
   };
 

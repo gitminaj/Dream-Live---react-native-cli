@@ -18,7 +18,7 @@ import Video from 'react-native-video';
 import { BASE_URL } from '../../utils/constant';
 import axios from 'axios';
 import { getDataFromStore } from '../../store';
-// import { toast } from 'sonner-native';
+import * as Burnt from "burnt";
 
 const CreatePost = ({ route, navigation }) => {
   const { media } = route.params;
@@ -29,7 +29,10 @@ const CreatePost = ({ route, navigation }) => {
   const isVideo = media.type && media.type.includes('video');
   const screenWidth = Dimensions.get('window').width;
 
+      console.log('media',media)
+
   const handleSubmitPost = async () => {
+
     if (isSubmitting) return;
     if (!caption.trim()) {
       Alert.alert('Missing Caption', 'Please add a caption to your post');
@@ -43,7 +46,7 @@ const CreatePost = ({ route, navigation }) => {
     formData.append('body', caption);
     
     // Append the media file
-    const fileExtension = media.uri.split('.').pop();
+    const fileExtension = media.filename.split('.').pop();
     const mimeType = isVideo 
       ? `video/${fileExtension}` 
       : `image/${fileExtension}`;
@@ -69,7 +72,10 @@ const CreatePost = ({ route, navigation }) => {
 
       if (response.data && response.data.success) {
         // Alert.alert('Success', 'Post created successfully!')
-      //  toast('Hello, World!')
+      Burnt.toast({
+  title: "Post Created Successfully!",
+  preset: "done",
+});
         navigation.navigate('Home', { newPost: response.data.post });
       } else {
         throw new Error(response.data?.message || 'Failed to create post');
@@ -173,11 +179,12 @@ const CreatePost = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#0F172A',
+    backgroundColor: '#353030',
+
   },
   container: {
     flex: 1,
-    backgroundColor: '#0F172A',
+    backgroundColor: '#353030',
   },
   header: {
     flexDirection: 'row',
@@ -185,7 +192,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 15,
     borderBottomWidth: 0,
-    backgroundColor: '#0F172A',
+    backgroundColor: '#353030',
     zIndex: 1,
   },
   headerTitle: {
@@ -213,7 +220,7 @@ const styles = StyleSheet.create({
   },
   mediaPreviewContainer: {
     flex: 1,
-    backgroundColor: '#0F172A',
+    backgroundColor: '#353030',
     justifyContent: 'flex-start',
     marginBottom: 100
   },
@@ -240,7 +247,7 @@ const styles = StyleSheet.create({
   },
   captionContainer: {
     // padding: 15,
-    backgroundColor: '#0F172A',
+    backgroundColor: '#353030',
   },
   captionInput: {
     // borderRadius: 10,

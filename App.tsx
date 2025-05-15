@@ -1,6 +1,7 @@
 // import React from 'react';
 import {NavigationContainer, DarkTheme} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 // import { Chat, OverlayProvider } from 'stream-chat-react-native';
 // import Toast from 'react-native-toast-message';
 
@@ -24,7 +25,9 @@ import VipDetails from './src/screens/VipDetails';
 import CreatePost from './src/screens/post/CreatePost';
 import PostsScreen from './src/screens/post/PostsScreen';
 import UpdatePost from './src/screens/post/UpdatePost';
+// import GalleryPicker from './src/screens/post/GalleryPicker';
 import CustomGallery from './src/screens/post/CustomGallery';
+import MyPosts from './src/screens/post/MyPosts';
 
 import { UserContextProvider } from './src/utils/context/user-context';
 // import { streamClient } from './src/utils/streamClient';
@@ -34,6 +37,8 @@ const Stack = createNativeStackNavigator();
 
 function App(): React.JSX.Element {
   return (
+    <GestureHandlerRootView>
+
     <UserContextProvider>
       {/* <OverlayProvider>
         <Chat client={streamClient}> */}
@@ -59,20 +64,25 @@ function App(): React.JSX.Element {
               <Stack.Screen name="CreatePost" component={CreatePost} />
               <Stack.Screen name="PostsScreen" component={PostsScreen} />
               <Stack.Screen name="UpdatePost" component={UpdatePost} />
-              <Stack.Screen 
-        name="CustomGallery" 
-        component={CustomGallery}
-        options={{ 
-          presentation: 'modal',  // This gives it a modal appearance like Instagram
-          animationEnabled: true,
+              <Stack.Screen name="MyPosts" component={MyPosts} />
+              <Stack.Screen name="CustomGallery" component={CustomGallery} />
+              {/* <Stack.Screen 
+        name="GalleryPicker" 
+        component={GalleryPicker}
+        options={{
+          headerShown: false,
+          presentation: 'transparentModal',
+          // cardStyle: { backgroundColor: 'transparent' },
+          // animationEnabled: true,
         }}
-      />
+      /> */}
             </Stack.Navigator>
           </NavigationContainer>
         {/* </Chat>
       </OverlayProvider> */}
       {/* <Toast /> */}
     </UserContextProvider>
+    </GestureHandlerRootView>
 
   );
 }

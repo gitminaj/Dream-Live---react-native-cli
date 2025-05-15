@@ -19,17 +19,37 @@ const itemSize = (width - 40) / 3;
 
 const requestPermission = async () => {
   if (Platform.OS === 'android') {
-    const permission =
-      Platform.Version >= 33
-        ? PermissionsAndroid.PERMISSIONS.READ_MEDIA_IMAGES
-        : PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE;
-
-    const hasPermission = await PermissionsAndroid.check(permission);
-    if (!hasPermission) {
-      const status = await PermissionsAndroid.request(permission);
-      return status === PermissionsAndroid.RESULTS.GRANTED;
+    // For Android 13+ (API 33+), we need separate permissions for photos and videos
+    if (Platform.Version >= 33) {
+      const photoPermission = PermissionsAndroid.PERMISSIONS.READ_MEDIA_IMAGES;
+      const videoPermission = PermissionsAndroid.PERMISSIONS.READ_MEDIA_VIDEO;
+      
+      const hasPhotoPermission = await PermissionsAndroid.check(photoPermission);
+      const hasVideoPermission = await PermissionsAndroid.check(videoPermission);
+      
+      if (!hasPhotoPermission || !hasVideoPermission) {
+        const statuses = await PermissionsAndroid.requestMultiple([
+          photoPermission,
+          videoPermission
+        ]);
+        
+        return (
+          statuses[photoPermission] === PermissionsAndroid.RESULTS.GRANTED &&
+          statuses[videoPermission] === PermissionsAndroid.RESULTS.GRANTED
+        );
+      }
+      return true;
+    } else {
+      // For older Android versions
+      const permission = PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE;
+      const hasPermission = await PermissionsAndroid.check(permission);
+      
+      if (!hasPermission) {
+        const status = await PermissionsAndroid.request(permission);
+        return status === PermissionsAndroid.RESULTS.GRANTED;
+      }
+      return true;
     }
-    return true;
   }
   return true;
 };
@@ -41,46 +61,93 @@ const CustomGallery = ({ navigation }) => {
   const [error, setError] = useState('');
   const [selectedImage, setSelectedImage] = useState(null);
 
-  const loadPhotos = async () => {
-    try {
-      const granted = await requestPermission();
-      if (!granted) {
-        setError('Permission denied');
-        return;
-      }
-
-      const result = await CameraRoll.getPhotos({
-        first: 20,
-        assetType: 'All', // Include both photos and videos
-        include: ['playableDuration', 'filename', 'fileSize', 'location', 'imageSize', 'orientation'],
-        groupTypes: 'All',
-      });
-      
-      setPhotos(result.edges);
-      
-      // Group photos by album for the Albums tab
-      const groupedByAlbum = {};
-      result.edges.forEach(edge => {
-        const album = edge.node.group_name || 'Ungrouped';
-        if (!groupedByAlbum[album]) {
-          groupedByAlbum[album] = [];
-        }
-        groupedByAlbum[album].push(edge);
-      });
-      
-      const albumsList = Object.keys(groupedByAlbum).map(albumName => ({
-        title: albumName,
-        count: groupedByAlbum[albumName].length,
-        thumbnail: groupedByAlbum[albumName][0]?.node.image.uri,
-      }));
-      
-      setAlbums(albumsList);
-      
-    } catch (err) {
-      console.error('Error loading photos', err);
-      setError(err.message);
+const loadPhotos = async () => {
+  try {
+    const granted = await requestPermission();
+    if (!granted) {
+      setError('Permission denied - need access to both photos and videos');
+      return;
     }
-  };
+
+    console.log('Fetching media with assetType: All');
+    
+    // First, try to get all media
+    const result = await CameraRoll.getPhotos({
+      first: 20,
+      assetType: 'All', 
+      include: ['playableDuration', 'filename', 'fileSize', 'location', 'imageSize', 'orientation'],
+    });
+
+    console.log('Media result:', JSON.stringify(result.edges.length));
+    
+    // Check if we're getting any videos in the returned results
+    const hasVideos = result.edges.some(edge => 
+      edge.node.type && edge.node.type.startsWith('video')
+    );
+    
+    console.log('Has videos in result:', hasVideos);
+    
+    // Log a sample of the first 3 items to see their types
+    if (result.edges.length > 0) {
+      console.log('Sample media types:');
+      result.edges.slice(0, 3).forEach((edge, i) => {
+        console.log(`Item ${i}: type=${edge.node.type}, uri=${edge.node.image.uri}`);
+      });
+    }
+    
+    // If we didn't get any videos, try fetching videos separately
+    if (!hasVideos) {
+      console.log('No videos found in All query, trying Videos specifically');
+      try {
+        const videoResult = await CameraRoll.getPhotos({
+          first: 10,
+          assetType: 'Videos',
+          include: ['playableDuration', 'filename', 'fileSize', 'location', 'imageSize', 'orientation'],
+        });
+        
+        console.log('Video-specific query result count:', videoResult.edges.length);
+        
+        // If we do get videos in the specific query, there might be an issue with 'All'
+        if (videoResult.edges.length > 0) {
+          // Combine the results
+          setPhotos([...result.edges, ...videoResult.edges]);
+          console.log('Combined photos and videos');
+        } else {
+          setPhotos(result.edges);
+          console.log('No videos found even with Videos assetType');
+        }
+      } catch (videoErr) {
+        console.error('Error fetching videos:', videoErr);
+        setPhotos(result.edges); // Just use photos if video fetch fails
+      }
+    } else {
+      setPhotos(result.edges);
+    }
+    
+    // Rest of your code for albums remains the same
+    // Group photos by album for the Albums tab
+    const groupedByAlbum = {};
+    result.edges.forEach(edge => {
+      const album = edge.node.group_name || 'Ungrouped';
+      if (!groupedByAlbum[album]) {
+        groupedByAlbum[album] = [];
+      }
+      groupedByAlbum[album].push(edge);
+    });
+    
+    const albumsList = Object.keys(groupedByAlbum).map(albumName => ({
+      title: albumName,
+      count: groupedByAlbum[albumName].length,
+      thumbnail: groupedByAlbum[albumName][0]?.node.image.uri,
+    }));
+    
+    setAlbums(albumsList);
+    
+  } catch (err) {
+    console.error('Error loading photos', err);
+    setError(`Error: ${err.message}`);
+  }
+};
 
   const selectImage = (item) => {
     setSelectedImage(item.node.image.uri);
@@ -147,39 +214,45 @@ const CustomGallery = ({ navigation }) => {
     </View>
   );
 
-  const renderPhotoItem = ({ item, index }) => {
-    const isVideo = item.node.type && item.node.type.startsWith('video');
-    const duration = item.node.image.playableDuration || 0;
-    
-    return (
-      <TouchableOpacity 
-        style={styles.imageContainer}
-        onPress={() => selectImage(item)}
-      >
-        <Image
-          source={{ uri: item.node.image.uri }}
-          style={styles.image}
-        />
-        {isVideo && (
-          <View style={styles.videoDurationContainer}>
-            <Text style={styles.videoDuration}>
-              {formatDuration(duration)}
-            </Text>
-          </View>
-        )}
-        <View style={styles.checkboxContainer}>
-          <View style={[
-            styles.checkbox,
-            selectedImage === item.node.image.uri && styles.checkboxSelected
-          ]}>
-            {selectedImage === item.node.image.uri && (
-              <Text style={styles.checkmark}>✓</Text>
-            )}
-          </View>
+const renderPhotoItem = ({ item, index }) => {
+  // Improved video detection: check both type field and playableDuration
+  const isVideo = (item.node.type && item.node.type.startsWith('video')) || 
+                 (item.node.image.playableDuration && item.node.image.playableDuration > 0);
+  
+  const duration = item.node.image.playableDuration || 0;
+  
+  console.log(`Item ${index}: ${item.node.image.uri} - isVideo:`, isVideo, 
+    `type:${item.node.type}, duration:${duration}`);
+  
+  return (
+    <TouchableOpacity 
+      style={styles.imageContainer}
+      onPress={() => selectImage(item)}
+    >
+      <Image
+        source={{ uri: item.node.image.uri }}
+        style={styles.image}
+      />
+      {isVideo && (
+        <View style={styles.videoDurationContainer}>
+          <Text style={styles.videoDuration}>
+            {formatDuration(duration)}
+          </Text>
         </View>
-      </TouchableOpacity>
-    );
-  };
+      )}
+      <View style={styles.checkboxContainer}>
+        <View style={[
+          styles.checkbox,
+          selectedImage === item.node.image.uri && styles.checkboxSelected
+        ]}>
+          {selectedImage === item.node.image.uri && (
+            <Text style={styles.checkmark}>✓</Text>
+          )}
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+};
 
   const renderAlbumItem = ({ item }) => (
     <TouchableOpacity style={styles.albumContainer}>
@@ -238,7 +311,7 @@ const CustomGallery = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: '#353030',
   },
   header: {
     paddingHorizontal: 10,

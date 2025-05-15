@@ -18,6 +18,7 @@ import Video from 'react-native-video';
 import { BACKEND_URL, BASE_URL } from '../../utils/constant';
 import axios from 'axios';
 import { getDataFromStore } from '../../store';
+import * as Burnt from "burnt";
 
 const UpdatePostScreen = ({ route, navigation }) => {
   const { post } = route.params || {};
@@ -62,7 +63,11 @@ const UpdatePostScreen = ({ route, navigation }) => {
       );
 
       if (response.data && response.data.success) {
-        Alert.alert('Success', 'Post updated successfully!');
+        // Alert.alert('Success', 'Post updated successfully!');
+        Burnt.toast({
+          title: 'Post Updated Successfuly',
+          preset: 'done' 
+        })
         navigation.goBack();
       } else {
         throw new Error(response.data?.message || 'Failed to update post');

@@ -8,10 +8,10 @@ import {
   ScrollView,
   SafeAreaView,
   StatusBar,
-  RefreshControl 
+  RefreshControl, 
 } from 'react-native';
 import {getDataFromStore, removeDataFromStore} from '../store';
-import {useNavigation} from '@react-navigation/native';
+import {useNavigation, CommonActions} from '@react-navigation/native';
 import {UserContext} from '../utils/context/user-context';
 
 // icons
@@ -23,6 +23,7 @@ import Feather from 'react-native-vector-icons/Feather';
 import MaterialCommunityIcon from 'react-native-vector-icons/MaterialCommunityIcons';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import { BACKEND_URL } from '../utils/constant';
+import MyPosts from './post/MyPosts';
 
 const MenuItem = ({icon, onPress, title}) => {
   return (
@@ -41,8 +42,9 @@ const MenuItem = ({icon, onPress, title}) => {
 
 const Profile = () => {
   const [refreshing, setRefreshing] = useState(false);
+  const [activeScreen, setActiveScreen] = useState('settings');
 
-  const { user, following, followers, refreshAllUserData } = useContext(UserContext);
+  const { user, following, followers, refreshAllUserData, userPost } = useContext(UserContext);
   const [followingList, setFollowingList] = useState();
   console.log('user', user);
 
@@ -63,14 +65,24 @@ const Profile = () => {
     refreshAllUserData();
   }, []);
 
-  const handleLogout = async () => {
-    try {
-      await removeDataFromStore('token');
-      await removeDataFromStore('user');
-      navigation.navigate('Login');
-    } catch (error) {
-      console.log('error logout', error);
-    }
+const handleLogout = async () => {
+  try {
+    await removeDataFromStore('token');
+    await removeDataFromStore('user');
+
+    navigation.dispatch(
+      CommonActions.reset({
+        index: 0,
+        routes: [{ name: 'Login' }],
+      })
+    );
+  } catch (error) {
+    console.log('error logout', error);
+  }
+};
+
+const handlePostClick = () => {
+    setActiveScreen('posts');
   };
 
   return (
@@ -105,10 +117,10 @@ const Profile = () => {
             <Text style={styles.statValue}>0</Text>
             <Text style={styles.statLabel}>Room</Text>
           </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>0</Text>
-            <Text style={styles.statLabel}>Visitors</Text>
-          </View>
+          <TouchableOpacity onPress={ handlePostClick } style={styles.statItem}>
+            <Text style={styles.statValue}>{userPost.length}</Text>
+            <Text style={styles.statLabel}>Posts</Text>
+          </TouchableOpacity>
           <TouchableOpacity onPress={ () => navigation.navigate('Following') } style={styles.statItem}>
             <Text style={styles.statValue}>{following?.length}</Text>
             <Text style={styles.statLabel}>Following</Text>
@@ -119,7 +131,10 @@ const Profile = () => {
           </TouchableOpacity>
         </View>
 
-        {/* Currency Boxes */}
+        {
+          activeScreen === 'settings' ? (
+            <View>
+             {/* Currency Boxes */}
         <View style={styles.currencyContainer}>
           <View style={styles.currencyBox}>
             <View style={styles.currencyIconContainer}>
@@ -251,6 +266,14 @@ const Profile = () => {
               /> */}
           </View>
         </View>
+
+        </View>
+          ) :(
+            <MyPosts/>
+          )
+        }
+
+       
         
       </ScrollView>
     </SafeAreaView>

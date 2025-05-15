@@ -18,6 +18,8 @@ import LinearGradient from 'react-native-linear-gradient';
 import Video from 'react-native-video';
 import { useFormateDate } from '../../utils/useFormateDate'
 
+import * as Burnt from "burnt";
+
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
@@ -30,7 +32,7 @@ const PostsScreen = ({navigation}) => {
   const [refreshing, setRefreshing] = useState(false);
   const [playingVideos, setPlayingVideos] = useState({});
   
-  // Function to fetch posts
+  // Function to fetch post
   const token = getDataFromStore('token');
   const fetchPosts = async () => {
     try {
@@ -99,7 +101,10 @@ const PostsScreen = ({navigation}) => {
 
               console.log('Post deleted', response);
               if (response?.data?.success) {
-                Alert.alert('success', 'Your post is deleted');
+                Burnt.toast({
+                  title: 'Post Deleted Successfully!',
+                  preset: 'done'
+                })
                 fetchPosts();
               }
             } catch (err) {
