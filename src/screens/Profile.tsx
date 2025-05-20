@@ -118,7 +118,7 @@ const handlePostClick = () => {
             <Text style={styles.statLabel}>Room</Text>
           </View>
           <TouchableOpacity onPress={ handlePostClick } style={styles.statItem}>
-            <Text style={styles.statValue}>{userPost.length}</Text>
+            <Text style={styles.statValue}>{userPost?.length}</Text>
             <Text style={styles.statLabel}>Posts</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={ () => navigation.navigate('Following') } style={styles.statItem}>

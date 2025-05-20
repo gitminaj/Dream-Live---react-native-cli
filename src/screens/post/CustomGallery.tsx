@@ -221,8 +221,8 @@ const renderPhotoItem = ({ item, index }) => {
   
   const duration = item.node.image.playableDuration || 0;
   
-  console.log(`Item ${index}: ${item.node.image.uri} - isVideo:`, isVideo, 
-    `type:${item.node.type}, duration:${duration}`);
+  // console.log(`Item ${index}: ${item.node.image.uri} - isVideo:`, isVideo, 
+  //   `type:${item.node.type}, duration:${duration}`);
   
   return (
     <TouchableOpacity 
