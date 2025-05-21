@@ -13,11 +13,14 @@ import {
   Dimensions
 } from 'react-native';
 import { CameraRoll } from '@react-native-camera-roll/camera-roll';
+import { ActivityIndicator } from 'react-native';
+
 
 const { width } = Dimensions.get('window');
 const itemSize = (width - 40) / 3;
 
 const requestPermission = async () => {
+
   if (Platform.OS === 'android') {
     // For Android 13+ (API 33+), we need separate permissions for photos and videos
     if (Platform.Version >= 33) {
@@ -55,13 +58,22 @@ const requestPermission = async () => {
 };
 
 const CustomGallery = ({ navigation }) => {
+  const [pageInfo, setPageInfo] = useState({ has_next_page: true, end_cursor: null });
+const [loadingMore, setLoadingMore] = useState(false);
+
+  const [loading, setLoading] = useState(true);
   const [photos, setPhotos] = useState([]);
   const [albums, setAlbums] = useState([]);
   const [selectedTab, setSelectedTab] = useState('Recent');
   const [error, setError] = useState('');
   const [selectedImage, setSelectedImage] = useState(null);
 
-const loadPhotos = async () => {
+const loadPhotos = async (loadMore = false) => {
+  if (loadingMore || (loadMore && !pageInfo.has_next_page)) return;
+
+  if (loadMore) setLoadingMore(true);
+  else setLoading(true);
+
   try {
     const granted = await requestPermission();
     if (!granted) {
@@ -69,85 +81,29 @@ const loadPhotos = async () => {
       return;
     }
 
-    console.log('Fetching media with assetType: All');
-    
-    // First, try to get all media
     const result = await CameraRoll.getPhotos({
-      first: 20,
-      assetType: 'All', 
+      first: 15,
+      after: loadMore ? pageInfo.end_cursor : undefined,
+      assetType: 'All',
       include: ['playableDuration', 'filename', 'fileSize', 'location', 'imageSize', 'orientation'],
     });
 
-    console.log('Media result:', JSON.stringify(result.edges.length));
-    
-    // Check if we're getting any videos in the returned results
-    const hasVideos = result.edges.some(edge => 
-      edge.node.type && edge.node.type.startsWith('video')
-    );
-    
-    console.log('Has videos in result:', hasVideos);
-    
-    // Log a sample of the first 3 items to see their types
-    if (result.edges.length > 0) {
-      console.log('Sample media types:');
-      result.edges.slice(0, 3).forEach((edge, i) => {
-        console.log(`Item ${i}: type=${edge.node.type}, uri=${edge.node.image.uri}`);
-      });
-    }
-    
-    // If we didn't get any videos, try fetching videos separately
-    if (!hasVideos) {
-      console.log('No videos found in All query, trying Videos specifically');
-      try {
-        const videoResult = await CameraRoll.getPhotos({
-          first: 10,
-          assetType: 'Videos',
-          include: ['playableDuration', 'filename', 'fileSize', 'location', 'imageSize', 'orientation'],
-        });
-        
-        console.log('Video-specific query result count:', videoResult.edges.length);
-        
-        // If we do get videos in the specific query, there might be an issue with 'All'
-        if (videoResult.edges.length > 0) {
-          // Combine the results
-          setPhotos([...result.edges, ...videoResult.edges]);
-          console.log('Combined photos and videos');
-        } else {
-          setPhotos(result.edges);
-          console.log('No videos found even with Videos assetType');
-        }
-      } catch (videoErr) {
-        console.error('Error fetching videos:', videoErr);
-        setPhotos(result.edges); // Just use photos if video fetch fails
-      }
+    if (loadMore) {
+      setPhotos(prev => [...prev, ...result.edges]);
     } else {
       setPhotos(result.edges);
     }
-    
-    // Rest of your code for albums remains the same
-    // Group photos by album for the Albums tab
-    const groupedByAlbum = {};
-    result.edges.forEach(edge => {
-      const album = edge.node.group_name || 'Ungrouped';
-      if (!groupedByAlbum[album]) {
-        groupedByAlbum[album] = [];
-      }
-      groupedByAlbum[album].push(edge);
-    });
-    
-    const albumsList = Object.keys(groupedByAlbum).map(albumName => ({
-      title: albumName,
-      count: groupedByAlbum[albumName].length,
-      thumbnail: groupedByAlbum[albumName][0]?.node.image.uri,
-    }));
-    
-    setAlbums(albumsList);
-    
+
+    setPageInfo(result.page_info);
   } catch (err) {
     console.error('Error loading photos', err);
     setError(`Error: ${err.message}`);
+  } finally {
+    if (loadMore) setLoadingMore(false);
+    else setLoading(false);
   }
 };
+
 
   const selectImage = (item) => {
     setSelectedImage(item.node.image.uri);
@@ -197,19 +153,19 @@ const loadPhotos = async () => {
           onPress={() => setSelectedTab('Recent')} 
           style={[styles.tab, selectedTab === 'Recent' && styles.activeTab]}
         >
-          <Text style={[styles.tabText, selectedTab === 'Recent' && styles.activeTabText]}>Recent</Text>
+          <Text style={[styles.tabText, selectedTab === 'Recent' && styles.activeTabText]}>Gallery</Text>
         </TouchableOpacity>
-        
+{/*         
         <TouchableOpacity 
           onPress={() => setSelectedTab('Albums')} 
           style={[styles.tab, selectedTab === 'Albums' && styles.activeTab]}
         >
           <Text style={[styles.tabText, selectedTab === 'Albums' && styles.activeTabText]}>Albums</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
         
-        <TouchableOpacity style={styles.menuButton}>
+        {/* <TouchableOpacity style={styles.menuButton}>
           <Text style={styles.menuDots}>⋯</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </View>
     </View>
   );
@@ -285,25 +241,37 @@ const renderPhotoItem = ({ item, index }) => {
       
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
       
-      {selectedTab === 'Recent' ? (
-        <>
-          {renderSectionHeader('Recent')}
-          <FlatList
-            data={photos}
-            keyExtractor={(item, index) => index.toString()}
-            numColumns={3}
-            renderItem={renderPhotoItem}
-            contentContainerStyle={styles.photoGrid}
-          />
-        </>
-      ) : (
-        <FlatList
-          data={albums}
-          keyExtractor={(item, index) => index.toString()}
-          renderItem={renderAlbumItem}
-          contentContainerStyle={styles.albumList}
-        />
-      )}
+      {loading ? (
+  <View style={styles.loaderContainer}>
+    <ActivityIndicator size="large" color="#D4ACFB" />
+  </View>
+) : selectedTab === 'Recent' ? (
+  <>
+    {renderSectionHeader('Recent')}
+    <FlatList
+      data={photos}
+      keyExtractor={(item, index) => index.toString()}
+      numColumns={3}
+      renderItem={renderPhotoItem}
+      contentContainerStyle={styles.photoGrid}
+      onEndReachedThreshold={0.5}
+  onEndReached={() => loadPhotos(true)}
+  ListFooterComponent={
+    loadingMore ? (
+      <ActivityIndicator size="small" color="#D4ACFB" style={{ margin: 10 }} />
+    ) : null
+  }
+    />
+  </>
+) : (
+  <FlatList
+    data={albums}
+    keyExtractor={(item, index) => index.toString()}
+    renderItem={renderAlbumItem}
+    contentContainerStyle={styles.albumList}
+  />
+)}
+
     </SafeAreaView>
   );
 };
@@ -443,7 +411,13 @@ const styles = StyleSheet.create({
   albumCount: {
     color: '#ccc',
     fontSize: 14,
-  }
+  },
+  loaderContainer: {
+  flex: 1,
+  justifyContent: 'center',
+  alignItems: 'center',
+},
+
 });
 
 export default CustomGallery;
