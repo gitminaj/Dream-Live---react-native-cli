@@ -14,78 +14,97 @@ import {
   ScrollView,
   StatusBar,
   FlatList,
+  Pressable,
 } from 'react-native';
 import Slider from '@react-native-community/slider';
-import Video from 'react-native-video';
 import {BASE_URL} from '../../utils/constant';
 import axios from 'axios';
 import {getDataFromStore} from '../../store';
 import * as Burnt from 'burnt';
 import {
   Canvas,
+  SkiaVideo,
   Image as SkiaImageComponent,
   Skia,
   useImage,
   useCanvasRef,
   BlurMask,
   Group,
+  Video as SkiaVideoComponent,
+  useVideo,
+  ImageShader,
+  ColorMatrix,
+  Fill,
 } from '@shopify/react-native-skia';
 import RNFS from 'react-native-fs';
 import {captureRef} from 'react-native-view-shot';
 import Icon from 'react-native-vector-icons/Feather';
+import {useSharedValue} from 'react-native-reanimated';
 
 const {width: screenWidth} = Dimensions.get('window');
 
-// Predefined video filters
+// Enhanced video filters with Skia ColorMatrix values
 const VIDEO_FILTERS = [
   {
     id: 'normal',
     name: 'Normal',
     icon: 'circle',
-    style: {},
+    matrix: null, // No filter applied
   },
   {
     id: 'warm',
     name: 'Warm',
     icon: 'sun',
-    style: {
-      filter: 'brightness(1.1) sepia(0.3)',
-      tint: 'rgba(255, 160, 0, 0.2)',
-    },
+    matrix: [
+      1.2, 0, 0, 0, 0.1,
+      0, 1.0, 0, 0, 0.05,
+      0, 0, 0.8, 0, 0,
+      0, 0, 0, 1, 0,
+    ],
   },
   {
     id: 'cool',
     name: 'Cool',
     icon: 'cloud-snow',
-    style: {
-      filter: 'brightness(1.1) saturate(1.1)',
-      tint: 'rgba(0, 160, 255, 0.2)',
-    },
+    matrix: [
+      0.8, 0, 0, 0, 0,
+      0, 1.0, 0, 0, 0,
+      0, 0, 1.2, 0, 0.1,
+      0, 0, 0, 1, 0,
+    ],
   },
   {
     id: 'vintage',
     name: 'Vintage',
     icon: 'film',
-    style: {
-      filter: 'sepia(0.5) contrast(1.1)',
-      tint: 'rgba(255, 220, 180, 0.3)',
-    },
+    matrix: [
+      0.95, 0, 0, 0, 0.05,
+      0.65, 0, 0, 0, 0.15,
+      0.15, 0, 0, 0, 0.5,
+      0, 0, 0, 1, 0,
+    ],
   },
   {
     id: 'monochrome',
     name: 'B&W',
     icon: 'eye',
-    style: {
-      filter: 'grayscale(1)',
-    },
+    matrix: [
+      0.299, 0.587, 0.114, 0, 0,
+      0.299, 0.587, 0.114, 0, 0,
+      0.299, 0.587, 0.114, 0, 0,
+      0, 0, 0, 1, 0,
+    ],
   },
   {
     id: 'dramatic',
     name: 'Dramatic',
     icon: 'sunset',
-    style: {
-      filter: 'contrast(1.5) brightness(0.9)',
-    },
+    matrix: [
+      1.5, 0, 0, 0, 0,
+      0, 1.5, 0, 0, 0,
+      0, 0, 1.5, 0, 0,
+      0, 0, 0, 1, 0,
+    ],
   },
 ];
 
@@ -93,7 +112,6 @@ const CreatePost = ({route, navigation}) => {
   const {media} = route.params;
   const [caption, setCaption] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isPaused, setIsPaused] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
   const [brightness, setBrightness] = useState(1);
   const [contrast, setContrast] = useState(1);
@@ -108,6 +126,15 @@ const CreatePost = ({route, navigation}) => {
   const [imageReady, setImageReady] = useState(false);
   const canvasRef = useCanvasRef();
   const canvasViewRef = useRef(null);
+
+  // Skia video support
+  const paused = useSharedValue(true);
+  const {currentFrame} = useVideo(
+    media?.uri || null,
+    {
+      paused,
+    }
+  );
 
   const isVideo = media?.type?.includes('video');
 
@@ -170,8 +197,8 @@ const CreatePost = ({route, navigation}) => {
 
   // Function to capture the filtered image using react-native-view-shot
   const captureFilteredImage = async () => {
-    if (!canvasViewRef.current || !skiaImage) {
-      console.error('Canvas view ref or skia image not ready');
+    if (!canvasViewRef.current || (!skiaImage && !isVideo)) {
+      console.error('Canvas view ref or media not ready');
       return null;
     }
 
@@ -181,13 +208,13 @@ const CreatePost = ({route, navigation}) => {
         format: 'png',
         quality: 1,
         result: 'file',
-        transparent: true,
+        transparent: false,
       });
 
-      console.log('Filtered image captured at:', uri);
+      console.log('Filtered media captured at:', uri);
       return uri;
     } catch (error) {
-      console.error('Error capturing filtered image:', error);
+      console.error('Error capturing filtered media:', error);
       return null;
     }
   };
@@ -238,6 +265,12 @@ const CreatePost = ({route, navigation}) => {
     return p;
   }, [brightness, contrast, saturation]);
 
+  // Get current video filter matrix
+  const getCurrentVideoFilterMatrix = () => {
+    const filter = VIDEO_FILTERS.find(f => f.id === activeVideoFilter);
+    return filter?.matrix || null;
+  };
+
   const handleSubmitPost = async () => {
     if (isSubmitting) return;
 
@@ -249,32 +282,28 @@ const CreatePost = ({route, navigation}) => {
     setIsSubmitting(true);
 
     try {
-      // If filters have been applied and we're working with an image, capture the filtered version
-      let finalImagePath = media.uri;
+      // If filters have been applied, capture the filtered version
+      let finalMediaPath = media.uri;
 
-      if (
-        !isVideo &&
-        (brightness !== 1 || contrast !== 1 || saturation !== 1 || blur > 0)
-      ) {
-        console.log('Capturing filtered image for upload...');
+      const hasImageFilters = !isVideo && (brightness !== 1 || contrast !== 1 || saturation !== 1 || blur > 0);
+      const hasVideoFilters = isVideo && activeVideoFilter !== 'normal';
+
+      if (hasImageFilters || hasVideoFilters) {
+        console.log('Capturing filtered media for upload...');
         const capturedPath = await captureFilteredImage();
         if (capturedPath) {
-          finalImagePath = capturedPath;
+          finalMediaPath = capturedPath;
           setFilteredImagePath(capturedPath);
-          console.log('Using filtered image:', finalImagePath);
+          console.log('Using filtered media:', finalMediaPath);
         } else {
-          console.warn('Could not capture filtered image, using original');
+          console.warn('Could not capture filtered media, using original');
         }
       }
-
-      // Note: For video, we'll just upload the original video 
-      // In a real app, you'd process the video with the filter applied server-side
-      // or use a video processing library
 
       const formData = new FormData();
       formData.append('body', caption);
 
-      // For video, we might want to store the filter ID to apply server-side
+      // Store filter information
       if (isVideo && activeVideoFilter !== 'normal') {
         formData.append('videoFilter', activeVideoFilter);
       }
@@ -285,13 +314,13 @@ const CreatePost = ({route, navigation}) => {
       formData.append('postUrl', {
         uri:
           Platform.OS === 'ios'
-            ? finalImagePath.replace('file://', '')
-            : finalImagePath,
+            ? finalMediaPath.replace('file://', '')
+            : finalMediaPath,
         type: mimeType,
         name: `post-media-${Date.now()}.${ext}`,
       });
 
-      console.log('Uploading media from path:', finalImagePath);
+      console.log('Uploading media from path:', finalMediaPath);
 
       const token = getDataFromStore('token');
       const response = await axios.post(
@@ -330,12 +359,6 @@ const CreatePost = ({route, navigation}) => {
     }
   };
 
-  // Function to get video filter style for the current active filter
-  const getVideoFilterStyle = () => {
-    const filter = VIDEO_FILTERS.find(f => f.id === activeVideoFilter);
-    return filter ? filter.style : {};
-  };
-
   // Function to handle slider value change based on active filter
   const handleSliderChange = value => {
     switch (activeFilter) {
@@ -356,68 +379,38 @@ const CreatePost = ({route, navigation}) => {
     }
   };
 
-  // Function to get current slider value based on active filter
-  const getCurrentSliderValue = () => {
-    switch (activeFilter) {
-      case 'brightness':
-        return brightness;
-      case 'contrast':
-        return contrast;
-      case 'saturation':
-        return saturation;
-      case 'blur':
-        return blur;
-      default:
-        return 1;
-    }
-  };
-
-  // Function to get min slider value based on active filter
-  const getMinSliderValue = () => {
-    switch (activeFilter) {
-      case 'brightness':
-        return 0;
-      case 'contrast':
-        return 0.2;
-      case 'saturation':
-        return 0;
-      case 'blur':
-        return 0;
-      default:
-        return 0;
-    }
-  };
-
-  // Get active filter label for display
+  // Helper functions for slider
   const getActiveFilterLabel = () => {
-    switch (activeFilter) {
-      case 'brightness':
-        return `Brightness: ${brightness.toFixed(1)}`;
-      case 'contrast':
-        return `Contrast: ${contrast.toFixed(1)}`;
-      case 'saturation':
-        return `Saturation: ${saturation.toFixed(1)}`;
-      case 'blur':
-        return `Blur: ${blur.toFixed(1)}`;
-      default:
-        return '';
-    }
+    const labels = {
+      brightness: 'Brightness',
+      contrast: 'Contrast',
+      saturation: 'Saturation',
+      blur: 'Blur'
+    };
+    return labels[activeFilter] || 'Filter';
   };
 
-  // Function to get max slider value based on active filter
+  const getMinSliderValue = () => {
+    return activeFilter === 'blur' ? 0 : 0.1;
+  };
+
   const getMaxSliderValue = () => {
-    switch (activeFilter) {
-      case 'brightness':
-        return 2.0;
-      case 'contrast':
-        return 2.0;
-      case 'saturation':
-        return 2.0;
-      case 'blur':
-        return 20.0;
-      default:
-        return 2.0;
-    }
+    return activeFilter === 'blur' ? 10 : 2;
+  };
+
+  const getCurrentSliderValue = () => {
+    const values = {
+      brightness,
+      contrast,
+      saturation,
+      blur
+    };
+    return values[activeFilter] || 1;
+  };
+
+  // Handle video play/pause
+  const toggleVideoPlayback = () => {
+    paused.value = !paused.value;
   };
 
   return (
@@ -443,42 +436,36 @@ const CreatePost = ({route, navigation}) => {
         </View>
 
         <View style={styles.mediaPreviewContainer}>
-          {isVideo ? (
-            <TouchableOpacity
-              onPress={() => setIsPaused(!isPaused)}
-              style={styles.videoContainer}
-              activeOpacity={1}>
-              <Video
-                ref={videoRef}
-                source={{uri: media.uri}}
-                style={styles.mediaPreviewVideo}
-                resizeMode="contain"
-                repeat
-                paused={isPaused}
-                filterEnabled
-              />
-              {/* Apply tint overlay if needed */}
-              {getVideoFilterStyle().tint && (
-                <View
-                  style={[
-                    styles.tintOverlay,
-                    {backgroundColor: getVideoFilterStyle().tint},
-                  ]}
-                />
-              )}
-              {isPaused && (
-                <View style={styles.playPauseButton}>
-                  <Icon name="play" size={24} color="white" />
-                </View>
-              )}
-            </TouchableOpacity>
-          ) : (
-            <>
-              {skiaImage ? (
-                <View
-                  ref={canvasViewRef}
-                  style={styles.skiaWrapper}
-                  collapsable={false}>
+          <View
+            ref={canvasViewRef}
+            style={styles.skiaWrapper}
+            collapsable={false}>
+            {isVideo ? (
+              <Pressable onPress={toggleVideoPlayback} style={styles.videoContainer}>
+                <Canvas ref={canvasRef} style={styles.skiaCanvas}>
+                  <Fill>
+                    <ImageShader
+                      image={currentFrame}
+                      x={0}
+                      y={0}
+                      width={screenWidth}
+                      height={screenWidth}
+                      fit="cover"
+                    />
+                    {getCurrentVideoFilterMatrix() && (
+                      <ColorMatrix matrix={getCurrentVideoFilterMatrix()} />
+                    )}
+                  </Fill>
+                </Canvas>
+                {paused.value && (
+                  <View style={styles.playPauseButton}>
+                    <Icon name="play" size={24} color="white" />
+                  </View>
+                )}
+              </Pressable>
+            ) : (
+              <>
+                {skiaImage ? (
                   <Canvas ref={canvasRef} style={styles.skiaCanvas}>
                     <Group>
                       <SkiaImageComponent
@@ -493,15 +480,15 @@ const CreatePost = ({route, navigation}) => {
                       {blur > 0 && <BlurMask blur={blur} style="normal" />}
                     </Group>
                   </Canvas>
-                </View>
-              ) : (
-                <View style={styles.loaderContainer}>
-                  <ActivityIndicator size="large" color="#D4ACFB" />
-                  <Text style={styles.loadingText}>Loading image...</Text>
-                </View>
-              )}
-            </>
-          )}
+                ) : (
+                  <View style={styles.loaderContainer}>
+                    <ActivityIndicator size="large" color="#D4ACFB" />
+                    <Text style={styles.loadingText}>Loading image...</Text>
+                  </View>
+                )}
+              </>
+            )}
+          </View>
         </View>
 
         <View style={styles.bottomToolbar}>
