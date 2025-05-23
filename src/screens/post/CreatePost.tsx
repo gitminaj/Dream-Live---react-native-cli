@@ -39,66 +39,112 @@ import {
 import RNFS from 'react-native-fs';
 import {captureRef} from 'react-native-view-shot';
 import Icon from 'react-native-vector-icons/Feather';
-import {useSharedValue} from 'react-native-reanimated';
+import {useSharedValue, runOnJS} from 'react-native-reanimated';
 
-const {width: screenWidth} = Dimensions.get('window');
-
-// Enhanced video filters with Skia ColorMatrix values
-const VIDEO_FILTERS = [
+export const IMAGE_FILTERS = [
   {
     id: 'normal',
     name: 'Normal',
     icon: 'circle',
-    matrix: null, // No filter applied
+    matrix: [
+    1, 0, 0, 0, 0,
+    0, 1, 0, 0, 0,
+    0, 0, 1, 0, 0,
+    0, 0, 0, 1, 0,
+  ],
+  },
+{
+  id: 'soft',
+  name: 'Soft',
+  icon: 'feather',
+  matrix: [
+    0.95, 0.05, 0.05, 0, 0.01176,
+    0.05, 0.95, 0.05, 0, 0.01176,
+    0.05, 0.05, 0.95, 0, 0.01176,
+    0,    0,    0,    1, 0,
+  ]
+},
+{
+  id: 'cinematic',
+  name: 'Cinema',
+  icon: 'film',
+  matrix: [
+    1.2, -0.05, -0.1, 0, 0,
+    -0.1, 1.1, -0.1, 0, 0,
+    -0.05, 0.05, 1.3, 0, 0,
+    0, 0, 0, 1, 0,
+  ],
+},
+  {
+    id: 'vintage',
+    name: 'Vintage',
+    icon: 'camera',
+    matrix: [
+      0.6, 0.3, 0.1, 0, 0,
+      0.2, 0.7, 0.1, 0, 0,
+      0.1, 0.2, 0.7, 0, 0,
+      0, 0, 0, 1, 0,
+    ],
   },
   {
-    id: 'warm',
-    name: 'Warm',
+    id: 'sepia',
+    name: 'Sepia',
     icon: 'sun',
     matrix: [
-      1.2, 0, 0, 0, 0.1,
-      0, 1.0, 0, 0, 0.05,
-      0, 0, 0.8, 0, 0,
+      0.393, 0.769, 0.189, 0, 0,
+      0.349, 0.686, 0.168, 0, 0,
+      0.272, 0.534, 0.131, 0, 0,
+      0, 0, 0, 1, 0,
+    ],
+  },
+  {
+  id: 'inverted',
+  name: 'Inverted',
+  icon: 'refresh-cw',
+  matrix: [
+   -1,  0,  0,  0,  1,
+    0, -1,  0,  0,  1,
+    0,  0, -1,  0,  1,
+    0,  0,  0,  1,  0,
+  ]
+},
+  {
+    id: 'grayscale',
+    name: 'B&W',
+    icon: 'moon',
+    matrix: [
+      0.299, 0.587, 0.114, 0, 0,
+      0.299, 0.587, 0.114, 0, 0,
+      0.299, 0.587, 0.114, 0, 0,
       0, 0, 0, 1, 0,
     ],
   },
   {
     id: 'cool',
     name: 'Cool',
-    icon: 'cloud-snow',
+    icon: 'wind',
     matrix: [
-      0.8, 0, 0, 0, 0,
-      0, 1.0, 0, 0, 0,
-      0, 0, 1.2, 0, 0.1,
+      0.8, 0, 0.2, 0, 0,
+      0, 0.9, 0.1, 0, 0,
+      0, 0, 1.2, 0, 0,
       0, 0, 0, 1, 0,
     ],
   },
   {
-    id: 'vintage',
-    name: 'Vintage',
-    icon: 'film',
-    matrix: [
-      0.95, 0, 0, 0, 0.05,
-      0.65, 0, 0, 0, 0.15,
-      0.15, 0, 0, 0, 0.5,
-      0, 0, 0, 1, 0,
-    ],
-  },
-  {
-    id: 'monochrome',
-    name: 'B&W',
-    icon: 'eye',
-    matrix: [
-      0.299, 0.587, 0.114, 0, 0,
-      0.299, 0.587, 0.114, 0, 0,
-      0.299, 0.587, 0.114, 0, 0,
-      0, 0, 0, 1, 0,
-    ],
+    id: 'warm',
+    name: 'Warm',
+    icon: 'sun',
+    matrix:[
+  1.2, 0,   0,   0, 0.1,
+  0,   1.0, 0,   0, 0.05,
+  0,   0,   0.8, 0, 0,
+  0,   0,   0,   1, 0
+],
   },
   {
     id: 'dramatic',
-    name: 'Dramatic',
-    icon: 'sunset',
+    name: 'Drama',
+    icon: 'zap',
     matrix: [
       1.5, 0, 0, 0, 0,
       0, 1.5, 0, 0, 0,
@@ -106,37 +152,96 @@ const VIDEO_FILTERS = [
       0, 0, 0, 1, 0,
     ],
   },
+  {
+  id: 'tealOrange',
+  name: 'Teal & Orange',
+  icon: 'film',
+  matrix: [
+    1.2, -0.1, -0.1, 0, 0,
+    -0.05,1.05, -0.1, 0, 0,
+    -0.2, 0.2,  1.0, 0, 0.02,
+    0,    0,    0,   1, 0,
+  ]
+},
+  {
+  id: 'moody',
+  name: 'Moody',
+  icon: 'cloud',
+  matrix: [
+    1.1, 0,   0,   0, -0.0196,
+    0,   1.1, 0,   0, -0.0196,
+    0,   0,   1.1, 0, -0.0196,
+    0,   0,   0,   1, 0,
+  ],
+},
+
+{
+  id: 'pastel',
+  name: 'Pastel',
+  icon: 'droplet',
+  matrix: [
+    1.05, 0,    0,    0, 0.0235,
+    0,    1.02, 0,    0, 0.0235,
+    0,    0,    1.0,  0, 0.0235,
+    0,    0,    0,    1, 0,
+  ],
+},
+{
+  id: 'matte',
+  name: 'Matte',
+  icon: 'square',
+  matrix: [
+    0.8, 0,   0,   0, 0.0784,
+    0,   0.8, 0,   0, 0.0784,
+    0,   0,   0.8, 0, 0.0784,
+    0,   0,   0,   1, 0,
+  ],
+},
+
 ];
+
+const {width: screenWidth} = Dimensions.get('window');
 
 const CreatePost = ({route, navigation}) => {
   const {media} = route.params;
   const [caption, setCaption] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
-  const [brightness, setBrightness] = useState(1);
-  const [contrast, setContrast] = useState(1);
-  const [saturation, setSaturation] = useState(1);
-  const [blur, setBlur] = useState(0);
-  const [activeFilter, setActiveFilter] = useState('brightness');
+  
   // For video filters
   const [activeVideoFilter, setActiveVideoFilter] = useState('normal');
+  
+  // For image filters
+  const [activeImageFilter, setActiveImageFilter] = useState('normal');
+  
   const videoRef = useRef(null);
   const [imagePath, setImagePath] = useState(null);
   const [filteredImagePath, setFilteredImagePath] = useState(null);
+  const [processedVideoPath, setProcessedVideoPath] = useState(null);
   const [imageReady, setImageReady] = useState(false);
   const canvasRef = useCanvasRef();
   const canvasViewRef = useRef(null);
-
-  // Skia video support
-  const paused = useSharedValue(true);
-  const {currentFrame} = useVideo(
-    media?.uri || null,
-    {
-      paused,
-    }
-  );
+  
+  // Video state management
+  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
+  const [videoError, setVideoError] = useState(false);
+  const [videoLoading, setVideoLoading] = useState(true);
 
   const isVideo = media?.type?.includes('video');
+
+  // Only use Reanimated for video content
+  const paused = isVideo ? useSharedValue(true) : null;
+  
+  const videoConfig = useMemo(() => {
+    if (!isVideo || !paused) return null;
+    return {
+      paused,
+      resizeMode: 'contain',
+      volume: 0,
+    };
+  }, [paused, isVideo]);
+
+  const video = isVideo ? useVideo(media?.uri || null, videoConfig) : null;
 
   // Load the image with Skia only after we have a valid path
   const skiaImage = useImage(imagePath);
@@ -151,12 +256,19 @@ const CreatePost = ({route, navigation}) => {
     }
   }, [skiaImage]);
 
+  // Handle video loading state
+  useEffect(() => {
+    if (isVideo && video) {
+      setVideoLoading(false);
+      setVideoError(false);
+    }
+  }, [video, isVideo]);
+
   // Handle resolving the image path, especially for content:// URIs
   useEffect(() => {
     const resolveImagePath = async () => {
       if (!isVideo) {
         try {
-          // For content:// URIs, we need to copy the file to a local path
           if (media?.uri?.startsWith('content://')) {
             const filename = `temp-image-${Date.now()}.jpg`;
             const destPath = `${RNFS.CachesDirectoryPath}/${filename}`;
@@ -166,15 +278,12 @@ const CreatePost = ({route, navigation}) => {
 
             await RNFS.copyFile(media.uri, destPath);
 
-            // For Android, we need the file:// prefix for Skia
             const finalPath =
               Platform.OS === 'android' ? `file://${destPath}` : destPath;
 
             console.log('Setting image path to:', finalPath);
             setImagePath(finalPath);
           } else {
-            // For file:// URIs, we can use them directly on iOS
-            // For Android, we might need to strip the file:// prefix for certain operations
             const finalPath =
               Platform.OS === 'android' && media.uri.startsWith('file://')
                 ? media.uri
@@ -195,15 +304,39 @@ const CreatePost = ({route, navigation}) => {
     }
   }, [media, isVideo]);
 
+  // NEW: Function to process video with filters (placeholder for actual video processing)
+  const processVideoWithFilters = async (originalVideoPath, filterMatrix) => {
+    try {
+      // For now, we'll just return the original video path
+      // In a real implementation, you would use a video processing library
+      // like FFmpeg to apply the color matrix filter to the video
+      
+      console.log('Processing video with filter matrix:', filterMatrix);
+      
+      // Placeholder: Copy video to processed location
+      const processedFilename = `processed-video-${Date.now()}.mp4`;
+      const processedPath = `${RNFS.CachesDirectoryPath}/${processedFilename}`;
+      
+      // For now, just copy the original video
+      // TODO: Implement actual video filter processing here
+      await RNFS.copyFile(originalVideoPath, processedPath);
+      
+      console.log('Video processed (copied) to:', processedPath);
+      return processedPath;
+    } catch (error) {
+      console.error('Error processing video:', error);
+      return originalVideoPath; // Fallback to original
+    }
+  };
+
   // Function to capture the filtered image using react-native-view-shot
   const captureFilteredImage = async () => {
-    if (!canvasViewRef.current || (!skiaImage && !isVideo)) {
-      console.error('Canvas view ref or media not ready');
+    if (!canvasViewRef.current || !skiaImage) {
+      console.error('Canvas view ref or image not ready');
       return null;
     }
 
     try {
-      // Use react-native-view-shot to capture the Canvas view
       const uri = await captureRef(canvasViewRef, {
         format: 'png',
         quality: 1,
@@ -211,63 +344,36 @@ const CreatePost = ({route, navigation}) => {
         transparent: false,
       });
 
-      console.log('Filtered media captured at:', uri);
+      console.log('Filtered image captured at:', uri);
       return uri;
     } catch (error) {
-      console.error('Error capturing filtered media:', error);
+      console.error('Error capturing filtered image:', error);
       return null;
     }
   };
 
-  const createColorMatrix = (brightnessVal, contrastVal, saturationVal) => {
-    // Step 1: Calculate saturation matrix values
-    const lumR = 0.2126;
-    const lumG = 0.7152;
-    const lumB = 0.0722;
-    const invSat = 1 - saturationVal;
-    const r = lumR * invSat;
-    const g = lumG * invSat;
-    const b = lumB * invSat;
-
-    // Step 2: Create brightness and contrast adjusted matrix
-    // For brightness adjustment (scale values to make effect more pronounced)
-    const brightnessAdjust = (brightnessVal - 1) * 0.003;
-
-    return [
-      contrastVal * (r + saturationVal),
-      contrastVal * g,
-      contrastVal * b,
-      0,
-      brightnessAdjust * 255, // Scale brightness effect
-      contrastVal * r,
-      contrastVal * (g + saturationVal),
-      contrastVal * b,
-      0,
-      brightnessAdjust * 255, // Scale brightness effect
-      contrastVal * r,
-      contrastVal * g,
-      contrastVal * (b + saturationVal),
-      0,
-      brightnessAdjust * 255, // Scale brightness effect
-      0,
-      0,
-      0,
-      1,
-      0,
-    ];
+  // Get current image filter matrix
+  const getCurrentImageFilterMatrix = () => {
+    const filter = IMAGE_FILTERS.find(f => f.id === activeImageFilter);
+    return filter?.matrix || null;
   };
 
+  // Updated paint object for image filters
   const paint = useMemo(() => {
     const p = Skia.Paint();
-    const matrix = createColorMatrix(brightness, contrast, saturation);
-    const colorFilter = Skia.ColorFilter.MakeMatrix(matrix);
-    p.setColorFilter(colorFilter);
+    const matrix = getCurrentImageFilterMatrix();
+    
+    if (matrix) {
+      const colorFilter = Skia.ColorFilter.MakeMatrix(matrix);
+      p.setColorFilter(colorFilter);
+    }
+    
     return p;
-  }, [brightness, contrast, saturation]);
+  }, [activeImageFilter]);
 
   // Get current video filter matrix
   const getCurrentVideoFilterMatrix = () => {
-    const filter = VIDEO_FILTERS.find(f => f.id === activeVideoFilter);
+    const filter = IMAGE_FILTERS.find(f => f.id === activeVideoFilter);
     return filter?.matrix || null;
   };
 
@@ -282,21 +388,43 @@ const CreatePost = ({route, navigation}) => {
     setIsSubmitting(true);
 
     try {
-      // If filters have been applied, capture the filtered version
       let finalMediaPath = media.uri;
+      let mimeType = media.type || (isVideo ? 'video/mp4' : 'image/jpeg');
+      let filename = media.filename || `media-${Date.now()}`;
 
-      const hasImageFilters = !isVideo && (brightness !== 1 || contrast !== 1 || saturation !== 1 || blur > 0);
-      const hasVideoFilters = isVideo && activeVideoFilter !== 'normal';
-
-      if (hasImageFilters || hasVideoFilters) {
-        console.log('Capturing filtered media for upload...');
+      // Handle filtered content
+      if (isVideo && activeVideoFilter !== 'normal') {
+        console.log('Processing video with filters...');
+        
+        // For video, we need to process the actual video file
+        const filterMatrix = getCurrentVideoFilterMatrix();
+        if (filterMatrix) {
+          const processedPath = await processVideoWithFilters(media.uri, filterMatrix);
+          if (processedPath && processedPath !== media.uri) {
+            finalMediaPath = processedPath;
+            setProcessedVideoPath(processedPath);
+            console.log('Using processed video:', finalMediaPath);
+          }
+        }
+        
+        // Ensure proper video MIME type and extension
+        mimeType = 'video/mp4';
+        filename = filename.replace(/\.[^/.]+$/, '') + '.mp4';
+        
+      } else if (!isVideo && activeImageFilter !== 'normal') {
+        console.log('Capturing filtered image for upload...');
+        
         const capturedPath = await captureFilteredImage();
         if (capturedPath) {
           finalMediaPath = capturedPath;
           setFilteredImagePath(capturedPath);
-          console.log('Using filtered media:', finalMediaPath);
+          console.log('Using filtered image:', finalMediaPath);
+          
+          // Update MIME type and filename for captured image
+          mimeType = 'image/png';
+          filename = `filtered-image-${Date.now()}.png`;
         } else {
-          console.warn('Could not capture filtered media, using original');
+          console.warn('Could not capture filtered image, using original');
         }
       }
 
@@ -307,20 +435,30 @@ const CreatePost = ({route, navigation}) => {
       if (isVideo && activeVideoFilter !== 'normal') {
         formData.append('videoFilter', activeVideoFilter);
       }
+      if (!isVideo && activeImageFilter !== 'normal') {
+        formData.append('imageFilter', activeImageFilter);
+      }
 
-      const ext = isVideo ? media.filename?.split('.').pop() || 'mp4' : 'png';
-      const mimeType = isVideo ? `video/${ext}` : 'image/png';
+      // Prepare the file for upload
+      const fileUri = Platform.OS === 'ios' ? 
+        finalMediaPath.replace('file://', '') : 
+        finalMediaPath;
 
       formData.append('postUrl', {
-        uri:
-          Platform.OS === 'ios'
-            ? finalMediaPath.replace('file://', '')
-            : finalMediaPath,
+        uri: fileUri,
         type: mimeType,
-        name: `post-media-${Date.now()}.${ext}`,
+        name: filename,
       });
 
-      console.log('Uploading media from path:', finalMediaPath);
+      console.log('Uploading media:', {
+        uri: fileUri,
+        type: mimeType,
+        name: filename,
+        isVideo,
+        hasFilters: isVideo ? activeVideoFilter !== 'normal' : activeImageFilter !== 'normal'
+      });
+
+      console.log('formdata', formData)
 
       const token = getDataFromStore('token');
       const response = await axios.post(
@@ -331,6 +469,7 @@ const CreatePost = ({route, navigation}) => {
             'Content-Type': 'multipart/form-data',
             Authorization: `Bearer ${token}`,
           },
+          timeout: 60000, // Increase timeout for video uploads
         },
       );
 
@@ -341,7 +480,7 @@ const CreatePost = ({route, navigation}) => {
         throw new Error(response.data.message || 'Failed to create post');
       }
     } catch (err) {
-      console.error('Post submission error:', err);
+      console.error('Post submission error:', err.message);
       Alert.alert('Post Failed', err.response?.data?.message || err.message);
     } finally {
       setIsSubmitting(false);
@@ -352,65 +491,103 @@ const CreatePost = ({route, navigation}) => {
     if (isVideo) {
       setActiveVideoFilter('normal');
     } else {
-      setBrightness(1);
-      setContrast(1);
-      setSaturation(1);
-      setBlur(0);
+      setActiveImageFilter('normal');
     }
   };
 
-  // Function to handle slider value change based on active filter
-  const handleSliderChange = value => {
-    switch (activeFilter) {
-      case 'brightness':
-        setBrightness(value);
-        break;
-      case 'contrast':
-        setContrast(value);
-        break;
-      case 'saturation':
-        setSaturation(value);
-        break;
-      case 'blur':
-        setBlur(value);
-        break;
-      default:
-        break;
-    }
-  };
-
-  // Helper functions for slider
-  const getActiveFilterLabel = () => {
-    const labels = {
-      brightness: 'Brightness',
-      contrast: 'Contrast',
-      saturation: 'Saturation',
-      blur: 'Blur'
-    };
-    return labels[activeFilter] || 'Filter';
-  };
-
-  const getMinSliderValue = () => {
-    return activeFilter === 'blur' ? 0 : 0.1;
-  };
-
-  const getMaxSliderValue = () => {
-    return activeFilter === 'blur' ? 10 : 2;
-  };
-
-  const getCurrentSliderValue = () => {
-    const values = {
-      brightness,
-      contrast,
-      saturation,
-      blur
-    };
-    return values[activeFilter] || 1;
-  };
-
-  // Handle video play/pause
+  // Improved video play/pause handling with proper null checks
   const toggleVideoPlayback = () => {
-    paused.value = !paused.value;
+    if (!isVideo || !paused) {
+      console.warn('Video controls called on non-video content');
+      return;
+    }
+    
+    try {
+      const newPlayState = !isVideoPlaying;
+      paused.value = !newPlayState;
+      
+      runOnJS(setIsVideoPlaying)(newPlayState);
+      
+      console.log('Video play state changed to:', newPlayState);
+    } catch (error) {
+      console.error('Error toggling video playback:', error);
+      setVideoError(true);
+    }
+  };
+
+  // Render video content with improved error handling
+  const renderVideoContent = () => {
+    if (videoError) {
+      return (
+        <View style={styles.errorContainer}>
+          <Icon name="alert-circle" size={48} color="#ff6b6b" />
+          <Text style={styles.errorText}>Video failed to load</Text>
+          <TouchableOpacity 
+            style={styles.retryButton}
+            onPress={() => {
+              setVideoError(false);
+              setVideoLoading(true);
+            }}>
+            <Text style={styles.retryText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    if (videoLoading) {
+      return (
+        <View style={styles.loaderContainer}>
+          <ActivityIndicator size="large" color="#D4ACFB" />
+          <Text style={styles.loadingText}>Loading video...</Text>
+        </View>
+      );
+    }
+
+    return (
+      <Pressable onPress={toggleVideoPlayback} style={styles.videoContainer}>
+        <Canvas ref={canvasRef} style={styles.skiaCanvas}>
+          <Fill>
+            {video?.currentFrame && (
+              <ImageShader
+                image={video.currentFrame}
+                x={0}
+                y={0}
+                width={screenWidth}
+                height={screenWidth}
+                fit="contain"
+              />
+            )}
+            {getCurrentVideoFilterMatrix() && (
+              <ColorMatrix matrix={getCurrentVideoFilterMatrix()} />
+            )}
+          </Fill>
+        </Canvas>
+
+        {!isVideoPlaying && (
+          <View style={[
+            styles.playPauseButton,
+            { opacity: 0.7 }
+          ]}>
+            <Icon
+              name="play"
+              size={24}
+              color="white"
+            />
+          </View>
+        )}
+
+        <View style={styles.videoControls}>
+          <View style={[
+            styles.playbackIndicator,
+            { backgroundColor: isVideoPlaying ? '#4CAF50' : '#ff9800' }
+          ]}>
+            <Text style={styles.playbackText}>
+              {isVideoPlaying ? 'Playing' : 'Paused'}
+            </Text>
+          </View>
+        </View>
+      </Pressable>
+    );
   };
 
   return (
@@ -441,28 +618,7 @@ const CreatePost = ({route, navigation}) => {
             style={styles.skiaWrapper}
             collapsable={false}>
             {isVideo ? (
-              <Pressable onPress={toggleVideoPlayback} style={styles.videoContainer}>
-                <Canvas ref={canvasRef} style={styles.skiaCanvas}>
-                  <Fill>
-                    <ImageShader
-                      image={currentFrame}
-                      x={0}
-                      y={0}
-                      width={screenWidth}
-                      height={screenWidth}
-                      fit="cover"
-                    />
-                    {getCurrentVideoFilterMatrix() && (
-                      <ColorMatrix matrix={getCurrentVideoFilterMatrix()} />
-                    )}
-                  </Fill>
-                </Canvas>
-                {paused.value && (
-                  <View style={styles.playPauseButton}>
-                    <Icon name="play" size={24} color="white" />
-                  </View>
-                )}
-              </Pressable>
+              renderVideoContent()
             ) : (
               <>
                 {skiaImage ? (
@@ -477,7 +633,6 @@ const CreatePost = ({route, navigation}) => {
                         fit="contain"
                         paint={paint}
                       />
-                      {blur > 0 && <BlurMask blur={blur} style="normal" />}
                     </Group>
                   </Canvas>
                 ) : (
@@ -545,17 +700,13 @@ const CreatePost = ({route, navigation}) => {
               <Text style={{textAlign: 'center', color: 'grey'}}>
                 Let others feel the moment too.
               </Text>
-              <Text style={{textAlign: 'center', color: 'grey'}}>
-                Share it.
-              </Text>
             </View>
           </KeyboardAvoidingView>
         ) : (
-          // Video and Image filter screens
           <View style={styles.filterControlsContainer}>
             <View style={styles.filterHeader}>
               <Text style={styles.filterHeaderText}>
-                {isVideo ? 'Video Filters' : 'Image Editor'}
+                {isVideo ? 'Video Filters' : 'Image Filters'}
               </Text>
               <TouchableOpacity
                 onPress={resetFilters}
@@ -564,159 +715,49 @@ const CreatePost = ({route, navigation}) => {
               </TouchableOpacity>
             </View>
             
-            {isVideo ? (
-              // Video filter options
-              <FlatList
-                data={VIDEO_FILTERS}
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={styles.videoFiltersScrollView}
-                contentContainerStyle={styles.videoFiltersContent}
-                keyExtractor={item => item.id}
-                renderItem={({item}) => (
-                  <TouchableOpacity
+            <FlatList
+              data={IMAGE_FILTERS}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.filtersScrollView}
+              contentContainerStyle={styles.filtersContent}
+              keyExtractor={item => item.id}
+              renderItem={({item}) => (
+                <TouchableOpacity
+                  style={[
+                    styles.filterOptionBox,
+                    (isVideo ? activeVideoFilter : activeImageFilter) === item.id && styles.activeFilterBox,
+                  ]}
+                  onPress={() => {
+                    if (isVideo) {
+                      setActiveVideoFilter(item.id);
+                    } else {
+                      setActiveImageFilter(item.id);
+                    }
+                  }}>
+                  <View
                     style={[
-                      styles.filterOptionBox,
-                      activeVideoFilter === item.id && styles.activeFilterBox,
-                    ]}
-                    onPress={() => setActiveVideoFilter(item.id)}>
-                    <View
-                      style={[
-                        styles.filterIcon,
-                        activeVideoFilter === item.id && styles.activeFilterIcon,
-                      ]}>
-                      <Icon
-                        name={item.icon}
-                        size={24}
-                        color={
-                          activeVideoFilter === item.id ? '#353030' : '#D4ACFB'
-                        }
-                      />
-                    </View>
-                    <Text
-                      style={[
-                        styles.filterOptionText,
-                        activeVideoFilter === item.id && styles.activeFilterText,
-                      ]}>
-                      {item.name}
-                    </Text>
-                  </TouchableOpacity>
-                )}
-              />
-            ) : (
-              // Image filter controls
-              <View style={{alignItems: 'center'}}>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  style={styles.filterOptionsScrollView}>
-                  <TouchableOpacity
+                      styles.filterIcon,
+                      (isVideo ? activeVideoFilter : activeImageFilter) === item.id && styles.activeFilterIcon,
+                    ]}>
+                    <Icon
+                      name={item.icon}
+                      size={24}
+                      color={
+                        (isVideo ? activeVideoFilter : activeImageFilter) === item.id ? '#353030' : '#D4ACFB'
+                      }
+                    />
+                  </View>
+                  <Text
                     style={[
-                      styles.filterOptionBox,
-                      activeFilter === 'brightness' && styles.activeFilterBox,
-                    ]}
-                    onPress={() => setActiveFilter('brightness')}>
-                    <View
-                      style={[
-                        styles.filterIcon,
-                        activeFilter === 'brightness' &&
-                          styles.activeFilterIcon,
-                      ]}>
-                      <Icon
-                        name="sun"
-                        size={24}
-                        color={
-                          activeFilter === 'brightness' ? '#353030' : '#D4ACFB'
-                        }
-                      />
-                    </View>
-                    <Text
-                      style={[
-                        styles.filterOptionText,
-                        activeFilter === 'brightness' &&
-                          styles.activeFilterText,
-                      ]}>
-                      Brightness
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[
-                      styles.filterOptionBox,
-                      activeFilter === 'contrast' && styles.activeFilterBox,
-                    ]}
-                    onPress={() => setActiveFilter('contrast')}>
-                    <View
-                      style={[
-                        styles.filterIcon,
-                        activeFilter === 'contrast' && styles.activeFilterIcon,
-                      ]}>
-                      <Icon
-                        name="circle"
-                        size={24}
-                        color={
-                          activeFilter === 'contrast' ? '#353030' : '#D4ACFB'
-                        }
-                      />
-                    </View>
-                    <Text
-                      style={[
-                        styles.filterOptionText,
-                        activeFilter === 'contrast' && styles.activeFilterText,
-                      ]}>
-                      Contrast
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[
-                      styles.filterOptionBox,
-                      activeFilter === 'saturation' && styles.activeFilterBox,
-                    ]}
-                    onPress={() => setActiveFilter('saturation')}>
-                    <View
-                      style={[
-                        styles.filterIcon,
-                        activeFilter === 'saturation' &&
-                          styles.activeFilterIcon,
-                      ]}>
-                      <Icon
-                        name="droplet"
-                        size={24}
-                        color={
-                          activeFilter === 'saturation' ? '#353030' : '#D4ACFB'
-                        }
-                      />
-                    </View>
-                    <Text
-                      style={[
-                        styles.filterOptionText,
-                        activeFilter === 'saturation' &&
-                          styles.activeFilterText,
-                      ]}>
-                      Saturation
-                    </Text>
-                  </TouchableOpacity>
-                </ScrollView>
-              </View>
-            )}
-
-            {!isVideo && (
-              <View style={styles.sliderContainer}>
-                <Text style={styles.sliderLabel}>{getActiveFilterLabel()}</Text>
-                <Slider
-                  style={styles.slider}
-                  minimumValue={getMinSliderValue()}
-                  maximumValue={getMaxSliderValue()}
-                  step={0.1}
-                  value={getCurrentSliderValue()}
-                  onValueChange={handleSliderChange}
-                  minimumTrackTintColor="#D4ACFB"
-                  maximumTrackTintColor="rgba(255,255,255,0.3)"
-                  thumbTintColor="#D4ACFB"
-                />
-              </View>
-            )}
+                      styles.filterOptionText,
+                      (isVideo ? activeVideoFilter : activeImageFilter) === item.id && styles.activeFilterText,
+                    ]}>
+                    {item.name}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            />
           </View>
         )}
       </View>
@@ -724,7 +765,9 @@ const CreatePost = ({route, navigation}) => {
       {isSubmitting && (
         <View style={styles.loadingOverlay}>
           <ActivityIndicator size="large" color="#D4ACFB" />
-          <Text style={styles.loadingText}>Posting...</Text>
+          <Text style={styles.loadingText}>
+            {isVideo ? 'Uploading Video...' : 'Posting...'}
+          </Text>
         </View>
       )}
     </SafeAreaView>
@@ -775,7 +818,7 @@ const styles = StyleSheet.create({
   },
   mediaPreviewContainer: {
     width: screenWidth,
-    height: screenWidth,
+    height: 500,
     backgroundColor: '#252525',
     justifyContent: 'center',
     alignItems: 'center',
@@ -797,6 +840,7 @@ const styles = StyleSheet.create({
     height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
+    position: 'relative',
   },
   mediaPreviewVideo: {
     width: '100%',
@@ -807,11 +851,58 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: 'rgba(53, 48, 48, 0.7)',
+    backgroundColor: 'rgba(53, 48, 48, 0.8)',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
     borderColor: '#D4ACFB',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  videoControls: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+  },
+  playbackIndicator: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    backgroundColor: '#4CAF50',
+  },
+  playbackText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    color: '#ff6b6b',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginTop: 10,
+    marginBottom: 15,
+  },
+  retryButton: {
+    backgroundColor: '#D4ACFB',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 16,
+  },
+  retryText: {
+    color: '#353030',
+    fontWeight: 'bold',
   },
   skiaCanvas: {
     width: screenWidth,
@@ -832,13 +923,12 @@ const styles = StyleSheet.create({
     borderTopColor: 'rgba(212,172,251,0.2)',
     paddingVertical: 10,
     position: 'absolute',
-    bottom: 270, // Adjusted this value to remove the gap
+    bottom: 182,
     left: 0,
     right: 0,
     zIndex: 10,
   },
   toolbarButton: {
-    // marginBottom: 50,
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 8,
@@ -890,12 +980,11 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 12,
   },
-  filterOptionsScrollView: {
-    // alignItems: 'center',
-    // justifyContent: 'center',
-    flexDirection: 'row',
+  filtersScrollView: {
     marginBottom: 15,
-    maxHeight: 100,
+  },
+  filtersContent: {
+    paddingHorizontal: 5,
   },
   filterOptionBox: {
     width: 80,
@@ -934,23 +1023,6 @@ const styles = StyleSheet.create({
   activeFilterText: {
     color: '#353030',
   },
-  sliderContainer: {
-    paddingHorizontal: 5,
-    backgroundColor: 'rgba(30, 30, 30, 0.7)',
-    borderRadius: 16,
-    padding: 10,
-  },
-  sliderLabel: {
-    color: 'white',
-    marginBottom: 8,
-    textAlign: 'center',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  slider: {
-    width: '100%',
-    height: 40,
-  },
   captionContainer: {
     backgroundColor: '#252525',
     padding: 15,
@@ -960,9 +1032,8 @@ const styles = StyleSheet.create({
   captionInput: {
     fontSize: 14,
     color: 'white',
-    height: 160,
+    height: 93,
     marginBottom: 20,
-    // height: 'auto',
     backgroundColor: '#353030',
     borderRadius: 10,
     padding: 12,
