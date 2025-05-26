@@ -40,165 +40,8 @@ import RNFS from 'react-native-fs';
 import {captureRef} from 'react-native-view-shot';
 import Icon from 'react-native-vector-icons/Feather';
 import {useSharedValue, runOnJS} from 'react-native-reanimated';
+import { IMAGE_FILTERS } from '../../utils/constant';
 
-export const IMAGE_FILTERS = [
-  {
-    id: 'normal',
-    name: 'Normal',
-    icon: 'circle',
-    matrix: [
-    1, 0, 0, 0, 0,
-    0, 1, 0, 0, 0,
-    0, 0, 1, 0, 0,
-    0, 0, 0, 1, 0,
-  ],
-  },
-{
-  id: 'soft',
-  name: 'Soft',
-  icon: 'feather',
-  matrix: [
-    0.95, 0.05, 0.05, 0, 0.01176,
-    0.05, 0.95, 0.05, 0, 0.01176,
-    0.05, 0.05, 0.95, 0, 0.01176,
-    0,    0,    0,    1, 0,
-  ]
-},
-{
-  id: 'cinematic',
-  name: 'Cinema',
-  icon: 'film',
-  matrix: [
-    1.2, -0.05, -0.1, 0, 0,
-    -0.1, 1.1, -0.1, 0, 0,
-    -0.05, 0.05, 1.3, 0, 0,
-    0, 0, 0, 1, 0,
-  ],
-},
-  {
-    id: 'vintage',
-    name: 'Vintage',
-    icon: 'camera',
-    matrix: [
-      0.6, 0.3, 0.1, 0, 0,
-      0.2, 0.7, 0.1, 0, 0,
-      0.1, 0.2, 0.7, 0, 0,
-      0, 0, 0, 1, 0,
-    ],
-  },
-  {
-    id: 'sepia',
-    name: 'Sepia',
-    icon: 'sun',
-    matrix: [
-      0.393, 0.769, 0.189, 0, 0,
-      0.349, 0.686, 0.168, 0, 0,
-      0.272, 0.534, 0.131, 0, 0,
-      0, 0, 0, 1, 0,
-    ],
-  },
-  {
-  id: 'inverted',
-  name: 'Inverted',
-  icon: 'refresh-cw',
-  matrix: [
-   -1,  0,  0,  0,  1,
-    0, -1,  0,  0,  1,
-    0,  0, -1,  0,  1,
-    0,  0,  0,  1,  0,
-  ]
-},
-  {
-    id: 'grayscale',
-    name: 'B&W',
-    icon: 'moon',
-    matrix: [
-      0.299, 0.587, 0.114, 0, 0,
-      0.299, 0.587, 0.114, 0, 0,
-      0.299, 0.587, 0.114, 0, 0,
-      0, 0, 0, 1, 0,
-    ],
-  },
-  {
-    id: 'cool',
-    name: 'Cool',
-    icon: 'wind',
-    matrix: [
-      0.8, 0, 0.2, 0, 0,
-      0, 0.9, 0.1, 0, 0,
-      0, 0, 1.2, 0, 0,
-      0, 0, 0, 1, 0,
-    ],
-  },
-  {
-    id: 'warm',
-    name: 'Warm',
-    icon: 'sun',
-    matrix:[
-  1.2, 0,   0,   0, 0.1,
-  0,   1.0, 0,   0, 0.05,
-  0,   0,   0.8, 0, 0,
-  0,   0,   0,   1, 0
-],
-  },
-  {
-    id: 'dramatic',
-    name: 'Drama',
-    icon: 'zap',
-    matrix: [
-      1.5, 0, 0, 0, 0,
-      0, 1.5, 0, 0, 0,
-      0, 0, 1.5, 0, 0,
-      0, 0, 0, 1, 0,
-    ],
-  },
-  {
-  id: 'tealOrange',
-  name: 'Teal & Orange',
-  icon: 'film',
-  matrix: [
-    1.2, -0.1, -0.1, 0, 0,
-    -0.05,1.05, -0.1, 0, 0,
-    -0.2, 0.2,  1.0, 0, 0.02,
-    0,    0,    0,   1, 0,
-  ]
-},
-  {
-  id: 'moody',
-  name: 'Moody',
-  icon: 'cloud',
-  matrix: [
-    1.1, 0,   0,   0, -0.0196,
-    0,   1.1, 0,   0, -0.0196,
-    0,   0,   1.1, 0, -0.0196,
-    0,   0,   0,   1, 0,
-  ],
-},
-
-{
-  id: 'pastel',
-  name: 'Pastel',
-  icon: 'droplet',
-  matrix: [
-    1.05, 0,    0,    0, 0.0235,
-    0,    1.02, 0,    0, 0.0235,
-    0,    0,    1.0,  0, 0.0235,
-    0,    0,    0,    1, 0,
-  ],
-},
-{
-  id: 'matte',
-  name: 'Matte',
-  icon: 'square',
-  matrix: [
-    0.8, 0,   0,   0, 0.0784,
-    0,   0.8, 0,   0, 0.0784,
-    0,   0,   0.8, 0, 0.0784,
-    0,   0,   0,   1, 0,
-  ],
-},
-
-];
 
 const {width: screenWidth} = Dimensions.get('window');
 
@@ -207,6 +50,7 @@ const CreatePost = ({route, navigation}) => {
   const [caption, setCaption] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [resolvedVideoPath, setResolvedVideoPath] = useState(null);
   
   // For video filters
   const [activeVideoFilter, setActiveVideoFilter] = useState('normal');
@@ -265,69 +109,108 @@ const CreatePost = ({route, navigation}) => {
   }, [video, isVideo]);
 
   // Handle resolving the image path, especially for content:// URIs
-  useEffect(() => {
-    const resolveImagePath = async () => {
-      if (!isVideo) {
-        try {
-          if (media?.uri?.startsWith('content://')) {
-            const filename = `temp-image-${Date.now()}.jpg`;
-            const destPath = `${RNFS.CachesDirectoryPath}/${filename}`;
+useEffect(() => {
+  const resolveMediaPath = async () => {
+    if (!media?.uri) return;
 
-            console.log('Copying from:', media.uri);
-            console.log('Copying to:', destPath);
+    try {
+      if (media.uri.startsWith('content://')) {
+        // Handle both images and videos with content:// URIs
+        const fileExtension = isVideo ? 'mp4' : 'jpg';
+        const filename = `temp-${isVideo ? 'video' : 'image'}-${Date.now()}.${fileExtension}`;
+        const destPath = `${RNFS.CachesDirectoryPath}/${filename}`;
 
-            await RNFS.copyFile(media.uri, destPath);
+        console.log('Copying from content URI:', media.uri);
+        console.log('Copying to:', destPath);
 
-            const finalPath =
-              Platform.OS === 'android' ? `file://${destPath}` : destPath;
+        await RNFS.copyFile(media.uri, destPath);
 
-            console.log('Setting image path to:', finalPath);
-            setImagePath(finalPath);
-          } else {
-            const finalPath =
-              Platform.OS === 'android' && media.uri.startsWith('file://')
-                ? media.uri
-                : media.uri;
+        // Verify the file was copied successfully
+        const fileExists = await RNFS.exists(destPath);
+        if (!fileExists) {
+          throw new Error('Failed to copy file from content URI');
+        }
 
-            console.log('Setting direct image path to:', finalPath);
-            setImagePath(finalPath);
-          }
-        } catch (err) {
-          console.error('Failed to resolve image path:', err);
-          Alert.alert('Image Error', 'Failed to load image. Please try again.');
+        const fileStats = await RNFS.stat(destPath);
+        console.log('File copied successfully:', {
+          path: destPath,
+          size: fileStats.size,
+          sizeInMB: (fileStats.size / (1024 * 1024)).toFixed(2)
+        });
+
+        const finalPath = Platform.OS === 'android' ? `file://${destPath}` : destPath;
+
+        console.log('Setting resolved media path to:', finalPath);
+        
+        if (isVideo) {
+          // For videos, we'll store the resolved path in a new state
+          setResolvedVideoPath(finalPath);
+        } else {
+          setImagePath(finalPath);
+        }
+      } else {
+        // Direct file path - handle normally
+        const finalPath = media.uri.startsWith('file://') ? media.uri : `file://${media.uri}`;
+        
+        console.log('Setting direct media path to:', finalPath);
+        
+        if (isVideo) {
+          setResolvedVideoPath(finalPath);
+        } else {
+          setImagePath(finalPath);
         }
       }
-    };
-
-    if (media?.uri) {
-      resolveImagePath();
-    }
-  }, [media, isVideo]);
-
-  // NEW: Function to process video with filters (placeholder for actual video processing)
-  const processVideoWithFilters = async (originalVideoPath, filterMatrix) => {
-    try {
-      // For now, we'll just return the original video path
-      // In a real implementation, you would use a video processing library
-      // like FFmpeg to apply the color matrix filter to the video
-      
-      console.log('Processing video with filter matrix:', filterMatrix);
-      
-      // Placeholder: Copy video to processed location
-      const processedFilename = `processed-video-${Date.now()}.mp4`;
-      const processedPath = `${RNFS.CachesDirectoryPath}/${processedFilename}`;
-      
-      // For now, just copy the original video
-      // TODO: Implement actual video filter processing here
-      await RNFS.copyFile(originalVideoPath, processedPath);
-      
-      console.log('Video processed (copied) to:', processedPath);
-      return processedPath;
-    } catch (error) {
-      console.error('Error processing video:', error);
-      return originalVideoPath; // Fallback to original
+    } catch (err) {
+      console.error('Failed to resolve media path:', err);
+      Alert.alert('Media Error', 'Failed to load media file. Please try selecting again.');
     }
   };
+
+  resolveMediaPath();
+}, [media, isVideo]);
+
+const processVideoWithFilters = async (inputPath, filterMatrix) => {
+  try {
+    console.log('Starting video processing...');
+    
+    // Clean the input path
+    const cleanInputPath = inputPath.replace('file://', '');
+    
+    // Ensure input file exists
+    const inputExists = await RNFS.exists(cleanInputPath);
+    if (!inputExists) {
+      throw new Error('Input video file does not exist at: ' + cleanInputPath);
+    }
+    
+    const outputPath = `${RNFS.CachesDirectoryPath}/filtered_video_${Date.now()}.mp4`;
+    
+    // Your actual video processing code here
+    // For now, just copy the original file (implement actual filtering as needed)
+    await RNFS.copyFile(cleanInputPath, outputPath);
+    
+    // Verify the processed file was created and has content
+    const exists = await RNFS.exists(outputPath);
+    if (!exists) {
+      throw new Error('Processed video file was not created');
+    }
+    
+    const fileStats = await RNFS.stat(outputPath);
+    if (fileStats.size === 0) {
+      throw new Error('Processed video file is empty');
+    }
+    
+    console.log('Video processing completed:', {
+      outputPath: `file://${outputPath}`,
+      size: fileStats.size,
+      sizeInMB: (fileStats.size / (1024 * 1024)).toFixed(2)
+    });
+    
+    return `file://${outputPath}`;
+  } catch (error) {
+    console.error('Video processing failed:', error);
+    return null;
+  }
+};
 
   // Function to capture the filtered image using react-native-view-shot
   const captureFilteredImage = async () => {
@@ -377,115 +260,208 @@ const CreatePost = ({route, navigation}) => {
     return filter?.matrix || null;
   };
 
-  const handleSubmitPost = async () => {
-    if (isSubmitting) return;
+const handleSubmitPost = async () => {
+  if (isSubmitting) return;
 
-    if (!caption.trim()) {
-      Alert.alert('Missing Caption', 'Please add a caption to your post');
-      return;
+  if (!caption.trim()) {
+    Alert.alert('Missing Caption', 'Please add a caption to your post');
+    return;
+  }
+
+  setIsSubmitting(true);
+
+  try {
+    // Use resolved paths instead of original media.uri
+    let finalMediaPath = isVideo ? resolvedVideoPath : imagePath;
+    
+    // Fallback to original URI if resolution failed
+    if (!finalMediaPath) {
+      finalMediaPath = media.uri;
+      console.warn('Using original URI as fallback:', finalMediaPath);
     }
 
-    setIsSubmitting(true);
+    let mimeType = media.type || (isVideo ? 'video/mp4' : 'image/jpeg');
+    let filename = media.filename || `media-${Date.now()}${isVideo ? '.mp4' : '.jpg'}`;
 
-    try {
-      let finalMediaPath = media.uri;
-      let mimeType = media.type || (isVideo ? 'video/mp4' : 'image/jpeg');
-      let filename = media.filename || `media-${Date.now()}`;
+    console.log('Starting upload with path:', finalMediaPath);
 
-      // Handle filtered content
-      if (isVideo && activeVideoFilter !== 'normal') {
-        console.log('Processing video with filters...');
+    // Handle filtered content
+    if (isVideo && activeVideoFilter !== 'normal') {
+      console.log('Preparing video for server-side filter processing...');
+      
+      // No client-side processing - send filter info to server
+      mimeType = 'video/mp4';
+      filename = filename.replace(/\.[^/.]+$/, '') + '.mp4';
+      
+    } else if (!isVideo && activeImageFilter !== 'normal') {
+      console.log('Capturing filtered image for upload...');
+      
+      const capturedPath = await captureFilteredImage();
+      if (capturedPath) {
+        finalMediaPath = capturedPath;
+        setFilteredImagePath(capturedPath);
+        console.log('Using filtered image:', finalMediaPath);
         
-        // For video, we need to process the actual video file
-        const filterMatrix = getCurrentVideoFilterMatrix();
-        if (filterMatrix) {
-          const processedPath = await processVideoWithFilters(media.uri, filterMatrix);
-          if (processedPath && processedPath !== media.uri) {
-            finalMediaPath = processedPath;
-            setProcessedVideoPath(processedPath);
-            console.log('Using processed video:', finalMediaPath);
-          }
-        }
-        
-        // Ensure proper video MIME type and extension
-        mimeType = 'video/mp4';
-        filename = filename.replace(/\.[^/.]+$/, '') + '.mp4';
-        
-      } else if (!isVideo && activeImageFilter !== 'normal') {
-        console.log('Capturing filtered image for upload...');
-        
-        const capturedPath = await captureFilteredImage();
-        if (capturedPath) {
-          finalMediaPath = capturedPath;
-          setFilteredImagePath(capturedPath);
-          console.log('Using filtered image:', finalMediaPath);
-          
-          // Update MIME type and filename for captured image
-          mimeType = 'image/png';
-          filename = `filtered-image-${Date.now()}.png`;
-        } else {
-          console.warn('Could not capture filtered image, using original');
-        }
-      }
-
-      const formData = new FormData();
-      formData.append('body', caption);
-
-      // Store filter information
-      if (isVideo && activeVideoFilter !== 'normal') {
-        formData.append('videoFilter', activeVideoFilter);
-      }
-      if (!isVideo && activeImageFilter !== 'normal') {
-        formData.append('imageFilter', activeImageFilter);
-      }
-
-      // Prepare the file for upload
-      const fileUri = Platform.OS === 'ios' ? 
-        finalMediaPath.replace('file://', '') : 
-        finalMediaPath;
-
-      formData.append('postUrl', {
-        uri: fileUri,
-        type: mimeType,
-        name: filename,
-      });
-
-      console.log('Uploading media:', {
-        uri: fileUri,
-        type: mimeType,
-        name: filename,
-        isVideo,
-        hasFilters: isVideo ? activeVideoFilter !== 'normal' : activeImageFilter !== 'normal'
-      });
-
-      console.log('formdata', formData)
-
-      const token = getDataFromStore('token');
-      const response = await axios.post(
-        `${BASE_URL}/post/create-post`,
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-            Authorization: `Bearer ${token}`,
-          },
-          timeout: 60000, // Increase timeout for video uploads
-        },
-      );
-
-      if (response.data.success) {
-        Burnt.toast({title: 'Post Created Successfully!', preset: 'done'});
-        navigation.navigate('Home', {newPost: response.data.post});
+        mimeType = 'image/png';
+        filename = `filtered-image-${Date.now()}.png`;
       } else {
-        throw new Error(response.data.message || 'Failed to create post');
+        console.warn('Could not capture filtered image, using original');
       }
-    } catch (err) {
-      console.error('Post submission error:', err.message);
-      Alert.alert('Post Failed', err.response?.data?.message || err.message);
-    } finally {
-      setIsSubmitting(false);
     }
-  };
+
+    // Ensure proper file URI formatting
+    let fileUri = finalMediaPath;
+    if (!fileUri.startsWith('file://')) {
+      fileUri = `file://${fileUri}`;
+    }
+    
+    // Verify file exists before upload
+    try {
+      const cleanPath = fileUri.replace('file://', '');
+      const fileExists = await RNFS.exists(cleanPath);
+      if (!fileExists) {
+        throw new Error('Media file does not exist at resolved path: ' + cleanPath);
+      }
+      
+      const fileStats = await RNFS.stat(cleanPath);
+      console.log('File to upload:', {
+        originalUri: media.uri,
+        resolvedPath: fileUri,
+        size: fileStats.size,
+        sizeInMB: (fileStats.size / (1024 * 1024)).toFixed(2)
+      });
+      
+      // Check file size limits
+      const maxSize = isVideo ? 100 * 1024 * 1024 : 10 * 1024 * 1024; // 100MB for video, 10MB for image
+      if (fileStats.size > maxSize) {
+        throw new Error(`File too large. Max size: ${isVideo ? '100MB' : '10MB'}`);
+      }
+      
+      if (fileStats.size === 0) {
+        throw new Error('File is empty or corrupted');
+      }
+      
+    } catch (fileError) {
+      console.error('File verification failed:', fileError);
+      throw new Error('Cannot access media file: ' + fileError.message);
+    }
+
+    const formData = new FormData();
+    formData.append('body', caption);
+
+    // Send filter information to server for processing
+    if (isVideo && activeVideoFilter !== 'normal') {
+      formData.append('videoFilter', activeVideoFilter);
+      formData.append('filterMatrix', JSON.stringify(getCurrentVideoFilterMatrix()));
+      console.log('Sending video filter info:', {
+        filter: activeVideoFilter,
+        matrix: getCurrentVideoFilterMatrix()
+      });
+    }
+    
+    if (!isVideo && activeImageFilter !== 'normal') {
+      formData.append('imageFilter', activeImageFilter);
+    }
+
+    // Create proper FormData file object
+    const fileObject = {
+      uri: fileUri,
+      type: mimeType,
+      name: filename,
+    };
+
+    formData.append('postUrl', fileObject);
+
+    console.log('Uploading media:', {
+      uri: fileUri,
+      type: mimeType,
+      name: filename,
+      isVideo,
+      hasVideoFilter: isVideo && activeVideoFilter !== 'normal',
+      hasImageFilter: !isVideo && activeImageFilter !== 'normal',
+      platform: Platform.OS
+    });
+
+    const token = getDataFromStore('token');
+    
+    if (!token) {
+      throw new Error('Authentication token not found. Please login again.');
+    }
+
+    // Upload with proper configuration - increased timeout for server processing
+    const response = await axios.post(
+      `${BASE_URL}/post/create-post`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          Authorization: `Bearer ${token}`,
+        },
+        timeout: isVideo ? 600000 : 60000, // 10 minutes for video (includes processing time), 1 minute for image
+        maxContentLength: Infinity,
+        maxBodyLength: Infinity,
+        onUploadProgress: (progressEvent) => {
+          const progress = (progressEvent.loaded / progressEvent.total) * 100;
+          console.log(`Upload Progress: ${progress.toFixed(2)}%`);
+          
+          // Show processing message after upload completes
+          if (progress === 100 && isVideo && activeVideoFilter !== 'normal') {
+            console.log('Upload complete, server is processing video filters...');
+          }
+        },
+      },
+    );
+
+    if (response.data.success) {
+      Burnt.toast({
+        title: isVideo && activeVideoFilter !== 'normal' 
+          ? 'Post created! Video is being processed...' 
+          : 'Post Created Successfully!', 
+        preset: 'done'
+      });
+      navigation.navigate('Home', {newPost: response.data.post});
+    } else {
+      throw new Error(response.data.message || 'Failed to create post');
+    }
+  } catch (err) {
+    console.error('Post submission error:', err);
+    
+    // Enhanced error handling
+    let errorMessage = 'An unexpected error occurred';
+    
+    if (err.code === 'ENOENT') {
+      errorMessage = 'The media file could not be found. Please try selecting the media again.';
+    } else if (err.code === 'NETWORK_ERROR' || err.message.includes('Network Error')) {
+      errorMessage = 'Network connection failed. Please check your internet connection and try again.';
+    } else if (err.code === 'ECONNABORTED' || err.message.includes('timeout')) {
+      errorMessage = isVideo && activeVideoFilter !== 'normal' 
+        ? 'Processing timeout. Video filters take time to apply. Please try again or use a shorter video.'
+        : 'Upload timeout. The file might be too large or your connection is slow. Try with a smaller file.';
+    } else if (err.response) {
+      const status = err.response.status;
+      if (status === 413) {
+        errorMessage = 'File too large. Please choose a smaller file.';
+      } else if (status === 401) {
+        errorMessage = 'Authentication failed. Please login again.';
+      } else if (status === 400) {
+        errorMessage = err.response.data?.message || 'Invalid file format or corrupted file.';
+      } else if (status === 422) {
+        errorMessage = 'Video processing failed. Please try a different filter or video.';
+      } else if (status >= 500) {
+        errorMessage = 'Server error. Please try again later.';
+      } else {
+        errorMessage = err.response.data?.message || `Server error (${status})`;
+      }
+    } else if (err.message) {
+      errorMessage = err.message;
+    }
+    
+    Alert.alert('Upload Failed', errorMessage);
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+
 
   const resetFilters = () => {
     if (isVideo) {

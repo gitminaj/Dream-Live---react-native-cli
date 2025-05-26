@@ -120,6 +120,7 @@ const PostsScreen = ({navigation}) => {
   const isVideoFile = (url) => {
     if (!url) return false;
     const videoExtensions = ['.mp4', '.mov', '.avi', '.wmv', '.flv', '.webm', '.mkv', '.3gp'];
+    console.log('video ext', videoExtensions.some(ext => url.toLowerCase().endsWith(ext)))
     return videoExtensions.some(ext => url.toLowerCase().endsWith(ext));
   };
   
@@ -132,90 +133,95 @@ const PostsScreen = ({navigation}) => {
   };
 
   // Render each post item
-  const renderPostItem = ({item}) => {
-    const isVideo = isVideoFile(`${BACKEND_URL}/${item?.postUrl?.replace(/\\/g, '/')}`);
-    const isPlaying = playingVideos[item._id] || false;
-    
-    return (
-      <View style={styles.postContainer}>
-        <TouchableOpacity 
-          onPress={() => isVideo ? toggleVideoPlayback(item._id) : handlePostPress(item)}
-          activeOpacity={0.9}
-        >
-          {isVideo ? (
-            <View style={styles.videoContainer}>
-              <Video
-                source={{uri: `${BACKEND_URL}/${item?.postUrl?.replace(/\\/g, '/')}`}}
-                style={styles.postVideo}
-                resizeMode="cover"
-                paused={!isPlaying}
-                controls={false}
-                repeat={true}
-              />
-              {/* Play/Pause overlay button */}
-              {!isPlaying && (
-                <View style={styles.playButtonOverlay}>
-                  <Ionicons name="play" size={50} color="white" style={styles.playIcon} />
-                </View>
-              )}
-              {/* Small play/pause indicator in corner */}
-              {/* <TouchableOpacity 
-                style={styles.videoControlButton}
-                onPress={() => toggleVideoPlayback(item._id)}
-              >
-                <Ionicons 
-                  name={isPlaying ? "pause" : "play"} 
-                  size={20} 
-                  color="white" 
-                />
-              </TouchableOpacity> */}
-            </View>
-          ) : (
-            <Image
-              source={{uri: `${BACKEND_URL}/${item?.postUrl?.replace(/\\/g, '/')}`}}
-              style={styles.postImage}
-              resizeMode="cover"
+const renderPostItem = ({item}) => {
+  const isVideo = isVideoFile(`${BACKEND_URL}/${item?.postUrl?.replace(/\\/g, '/')}`);
+  const isPlaying = playingVideos[item._id] || false;
+  const videoUrl = `${BACKEND_URL}/${item?.postUrl?.replace(/\\/g, '/')}`;
+  
+  return (
+    <View style={styles.postContainer}>
+      <TouchableOpacity 
+        onPress={() => isVideo ? toggleVideoPlayback(item._id) : handlePostPress(item)}
+        activeOpacity={0.9}
+      >
+        {isVideo ? (
+          <View style={styles.videoContainer}>
+            <Video
+              source={{uri: videoUrl}}
+              style={styles.postVideo}
+              resizeMode="contain" // Changed from "cover" to "contain"
+              paused={!isPlaying}
+              controls={false}
+              repeat={true}
+              muted={false} // Explicitly set muted state
+              playWhenInactive={false}
+              playInBackground={false}
+              ignoreSilentSwitch="ignore"
+              mixWithOthers="mix"
+              onError={(error) => {
+                console.log('Video Error:', error);
+              }}
+              onLoad={(data) => {
+                console.log('Video loaded successfully:', data);
+              }}
+              onLoadStart={() => {
+                console.log('Video load started for:', videoUrl);
+              }}
             />
-          )}
-        </TouchableOpacity>
+            {/* Play/Pause overlay button */}
+            {!isPlaying && (
+              <View style={styles.playButtonOverlay}>
+                <Ionicons name="play" size={50} color="white" style={styles.playIcon} />
+              </View>
+            )}
+          </View>
+        ) : (
+          <Image
+            source={{uri: videoUrl}}
+            style={styles.postImage}
+            resizeMode="cover"
+          />
+        )}
+      </TouchableOpacity>
 
-        <View style={styles.postActions}>
-          <View style={styles.actionIcons}>
-            <TouchableOpacity style={styles.actionIcon}>
-              <Text style={styles.actionIconText}>❤️</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.actionIcon}>
-              <Text style={styles.actionIconText}>💬</Text>
-            </TouchableOpacity>
-          </View>
-          <View style={{flexDirection: 'row'}}>
-            <TouchableOpacity style={styles.moreButton} onPress={() => navigation.navigate('UpdatePost', { post: item })}>
-              <AntDesign name="edit" size={15} style={{color: 'white'}} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.moreButton}
-              onPress={() => handleDelete(item._id)}>
-              <AntDesign name="delete" size={15} style={{color: 'white'}} />
-            </TouchableOpacity>
-          </View>
+      {/* Rest of your component remains the same */}
+      <View style={styles.postActions}>
+        <View style={styles.actionIcons}>
+          <TouchableOpacity style={styles.actionIcon}>
+            <Text style={styles.actionIconText}>❤️</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.actionIcon}>
+            <Text style={styles.actionIconText}>💬</Text>
+          </TouchableOpacity>
         </View>
-
-        <View style={styles.postDetails}>
-          <Text style={styles.likesText}>{item.likes || 0} likes</Text>
-          <Text style={styles.postDescription}>
-            <Text style={styles.username}>{item.username || 'You'} </Text>
-            {item.body}
-          </Text>
-          {item.comments && item.comments > 0 && (
-            <Text style={styles.commentsText}>
-              View all {item.comments} comments
-            </Text>
-          )}
-          <Text style={styles.timePosted}>{useFormateDate(item.createdAt) || 'Just now'}</Text>
+        <View style={{flexDirection: 'row'}}>
+          <TouchableOpacity style={styles.moreButton} onPress={() => navigation.navigate('UpdatePost', { post: item })}>
+            <AntDesign name="edit" size={15} style={{color: 'white'}} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.moreButton}
+            onPress={() => handleDelete(item._id)}>
+            <AntDesign name="delete" size={15} style={{color: 'white'}} />
+          </TouchableOpacity>
         </View>
       </View>
-    );
-  };
+
+      <View style={styles.postDetails}>
+        <Text style={styles.likesText}>{item.likes || 0} likes</Text>
+        <Text style={styles.postDescription}>
+          <Text style={styles.username}>{item.username || 'You'} </Text>
+          {item.body}
+        </Text>
+        {item.comments && item.comments > 0 && (
+          <Text style={styles.commentsText}>
+            View all {item.comments} comments
+          </Text>
+        )}
+        <Text style={styles.timePosted}>{useFormateDate(item.createdAt) || 'Just now'}</Text>
+      </View>
+    </View>
+  );
+};
 
   // Loading state
   if (loading && !refreshing) {
@@ -428,6 +434,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+
+  // 
+
+  
 });
 
 export default PostsScreen;

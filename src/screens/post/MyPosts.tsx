@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {UserContext} from '../../utils/context/user-context';
-import Video from 'react-native-video'; // Make sure to install this package
+import Video from 'react-native-video';
 
 const Width = Dimensions.get('window').width;
 const bannerWidth = Width * 0.4;
@@ -54,35 +54,45 @@ const MyPosts = () => {
     return videoExtensions.some(ext => url.toLowerCase().endsWith(ext));
   };
 
-  const renderMedia = (feed) => {
-    const mediaUrl = `${BACKEND_URL}/${feed?.postUrl?.replace(/\\/g, '/')}`;
-    
-    if (isVideo(feed?.postUrl)) {
-      return (
-        <View style={styles.mediaContainer}>
-          <Video
-            source={{uri: mediaUrl}}
-            style={styles.video}
-            resizeMode="cover"
-            paused={true} // Paused by default
-          />
-          <TouchableOpacity style={styles.playButtonContainer}>
-            <AntDesign name="playcircleo" size={20} color="white" />
-          </TouchableOpacity>
-        </View>
-      );
-    } else {
-      return (
-        <View style={styles.mediaContainer}>
-            <Image
-              source={{uri: mediaUrl}}
-              style={styles.image}
-              resizeMode='cover'
-            />
-        </View>
-      );
-    }
-  };
+const renderMedia = (feed) => {
+  if (!feed?.postUrl) return null;
+
+  const mediaUrl = feed.postUrl.startsWith('http') 
+    ? feed.postUrl.replace(/\\/g, '/')
+    : `${BACKEND_URL}/${feed.postUrl.replace(/\\/g, '/')}`;
+
+  console.log('Rendering media:', mediaUrl);
+
+  if (isVideo(feed.postUrl)) {
+    return (
+      <View style={styles.mediaContainer}>
+        <Text>oooo</Text>
+        <Video
+          source={{uri: mediaUrl}}
+          style={styles.video}
+          resizeMode="cover"
+          paused={true}
+          controls={false}
+          onError={(e) => console.log('Video Error:', e)}
+        />
+        <TouchableOpacity style={styles.playButton}>
+          <AntDesign name="playcircleo" size={30} color="white" />
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.mediaContainer}>
+      <Text>kdkdskfjsk</Text>
+      <Image
+        source={{uri: mediaUrl}}
+        style={styles.image}
+        onError={(e) => console.log('Image Error:', e.nativeEvent.error)}
+      />
+    </View>
+  );
+};
 
   return (
     <SafeAreaView style={styles.container}>
@@ -98,13 +108,11 @@ const MyPosts = () => {
               key={index} 
               style={styles.postItemContainer}
             >
-              <TouchableOpacity onPress={ () => navigation.navigate('PostsScreen')} >
+              <TouchableOpacity onPress={() => navigation.navigate('PostsScreen')}>
                 <View style={styles.mainContainer}>
                   <View style={styles.shadowWrapper}>
                     <View style={styles.outerContainer}>
                       {renderMedia(feed)}
-                      
-    
                     </View>
                   </View>
                 </View>
@@ -155,7 +163,7 @@ const styles = StyleSheet.create({
     width: '100%',
     borderRadius: 15,
     overflow: 'hidden',
-    // backgroundColor: 'black',
+    backgroundColor: 'black',
   },
   outerContainer: {
     borderRadius: 15,
@@ -165,6 +173,9 @@ const styles = StyleSheet.create({
     position: 'relative',
     width: '100%',
     height: 200,
+    backgroundColor: '#1a1a1a',
+    borderRadius: 15,
+    overflow: 'hidden',
   },
   playButtonContainer: {
     position: 'absolute',
@@ -174,6 +185,12 @@ const styles = StyleSheet.create({
     bottom: 0,
     justifyContent: 'center',
     alignItems: 'center',
+    zIndex: 2,
+  },
+  playButton: {
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    borderRadius: 25,
+    padding: 8,
   },
   chitChatText: {
     color: 'white',
@@ -206,7 +223,6 @@ const styles = StyleSheet.create({
     width: '100%',
     justifyContent: 'space-between',
     alignSelf: 'flex-end',
-    // marginBottom: 15,
     paddingHorizontal: 8,
   },
   feedHeader: {
@@ -249,11 +265,10 @@ const styles = StyleSheet.create({
   video: {
     width: '100%',
     height: 200,
-    borderRadius: 25,
+    borderRadius: 15,
+    backgroundColor: '#1a1a1a',
   },
   iconRow: {
-    // marginTop: 10,
-    // marginBottom: 10,
     flexDirection: 'row',
     justifyContent: 'space-around',
     width: '100%',
