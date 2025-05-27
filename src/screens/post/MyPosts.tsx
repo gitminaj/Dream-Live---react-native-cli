@@ -66,7 +66,6 @@ const renderMedia = (feed) => {
   if (isVideo(feed.postUrl)) {
     return (
       <View style={styles.mediaContainer}>
-        <Text>oooo</Text>
         <Video
           source={{uri: mediaUrl}}
           style={styles.video}
@@ -84,7 +83,6 @@ const renderMedia = (feed) => {
 
   return (
     <View style={styles.mediaContainer}>
-      <Text>kdkdskfjsk</Text>
       <Image
         source={{uri: mediaUrl}}
         style={styles.image}
