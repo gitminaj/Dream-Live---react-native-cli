@@ -1,22 +1,72 @@
-import React from "react";
-import { View, Text, Image, StyleSheet, Dimensions, TouchableOpacity } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import React, { useContext } from 'react';
+import {
+  View,
+  Text,
+  Image,
+  StyleSheet,
+  Dimensions,
+  TouchableOpacity,
+} from 'react-native';
+import {useNavigation} from '@react-navigation/native';
+import axios from 'axios';
+import { BASE_URL} from '../../utils/constant';
+import {getDataFromStore} from '../../store';
+import { UserContext } from "../../utils/context/user-context";
 
-const Width = Dimensions.get("window").width;
-const bannerWidth = Width * 0.4 ; 
+const Width = Dimensions.get('window').width;
+const bannerWidth = Width * 0.4;
 
-
-export default function FollowCard({ name, image }) {
+export default function FollowCard({name, image, id}) {
+  const { user } = useContext(UserContext);
   const navigation = useNavigation();
+
+  const handleChat = async () => {
+    const token = await getDataFromStore('token');
+    console.log('token', token);
+    console.log('user', user);
+
+    const payload = {
+      userId: user._id  ,
+      receiverId: id
+    }
+
+    console.log('payload',payload);
+
+    try {
+      const existingRoom = await axios.post(
+      `${BASE_URL}/chat/rooms/privateroom`,
+      payload,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
+
+    console.log('existing room', existingRoom);
+
+    let roomId = existingRoom?.data?.data?.id;
+    if (!roomId) {
+      const res = await axios.post(`${BASE_URL}/chat/rooms`, {
+        participants: [user._id, id]
+      });
+      console.log('res',res);
+      roomId = res.data.roomId;
+    }
+
+    navigation.navigate('Chat', {roomId, receiverUserId: id});
+    } catch (error) {
+      console.log('error: ', error)
+    }
+
+    
+  };
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <View style={{ flexDirection: "row" }}>
-          <Image
-            style={styles.profileImage}
-            source={{uri: String(image)}}
-          />
+        <View style={{flexDirection: 'row'}}>
+          <Image style={styles.profileImage} source={{uri: String(image)}} />
           <View>
             <Text style={styles.name}>{name || 'unknow'}</Text>
             <Text style={styles.timestamp}>6 hour ago</Text>
@@ -24,8 +74,8 @@ export default function FollowCard({ name, image }) {
         </View>
         <View>
           {/* <Link href="/chat" > */}
-          <TouchableOpacity onPress={() => navigation.navigate('Chat') }>
-           <Text style={styles.chatBtn}>Chat</Text>
+          <TouchableOpacity onPress={() => handleChat(id)}>
+            <Text style={styles.chatBtn}>Chat</Text>
           </TouchableOpacity>
           {/* </Link> */}
         </View>
@@ -36,7 +86,6 @@ export default function FollowCard({ name, image }) {
         resizeMode="cover"
         source={image}
       /> */}
-
     </View>
   );
 }
@@ -46,9 +95,9 @@ const styles = StyleSheet.create({
     marginTop: 30,
   },
   header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   profileImage: {
     width: 40,
@@ -57,22 +106,22 @@ const styles = StyleSheet.create({
     marginRight: 20,
   },
   name: {
-    color: "white",
-    fontWeight: "600",
+    color: 'white',
+    fontWeight: '600',
     fontSize: 14,
   },
   timestamp: {
-    color: "#94A3B8",
-    fontWeight: "600",
+    color: '#94A3B8',
+    fontWeight: '600',
     fontSize: 8,
   },
   chatBtn: {
     fontSize: 8,
-    fontWeight: "600",
-    color: "#D4ACFB",
+    fontWeight: '600',
+    color: '#D4ACFB',
     borderWidth: 1,
     borderRadius: 50,
-    borderColor: "#D4ACFB",
+    borderColor: '#D4ACFB',
     paddingHorizontal: 15,
     paddingVertical: 3,
   },

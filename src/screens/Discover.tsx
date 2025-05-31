@@ -1,25 +1,32 @@
-import { useEffect, useState, useContext } from "react";
-import { View, Text, StyleSheet, RefreshControl, TouchableOpacity, ScrollView } from "react-native";
+import {useEffect, useState, useContext} from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  RefreshControl,
+  TouchableOpacity,
+  ScrollView,
+} from 'react-native';
 import DiscoverCard from '../components/discoverNfollow/DiscoverCard';
 import FollowCard from '../components/discoverNfollow/FollowCard';
-import Icon from "react-native-vector-icons/SimpleLineIcons";
+import Icon from 'react-native-vector-icons/SimpleLineIcons';
 import axios from 'axios';
-import { BACKEND_URL, BASE_URL } from "../utils/constant";
-import { UserContext } from "../utils/context/user-context";
-import { getDataFromStore } from "../store";
+import {BACKEND_URL, BASE_URL} from '../utils/constant';
+import {UserContext} from '../utils/context/user-context';
+import {getDataFromStore} from '../store';
 
 export default function Discover() {
-  const [activeTab, setActiveTab] = useState("discover");
+  const [activeTab, setActiveTab] = useState('discover');
   const [discoverUser, setDiscoverUser] = useState([]);
   const [followingUser, setFollowingUser] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
-  const { user: userCon  } = useContext(UserContext);
+  const {user: userCon} = useContext(UserContext);
 
   const onRefresh = () => {
     setRefreshing(true);
 
     getDiscoverUser();
-      
+
     getFollowingUser();
 
     setTimeout(() => {
@@ -27,9 +34,11 @@ export default function Discover() {
     }, 2000);
   };
 
-  const getDiscoverUser = async () =>{
+  const getDiscoverUser = async () => {
     try {
-      const response = await axios.get(`${BASE_URL}/follow/discover/${userCon?._id}`);
+      const response = await axios.get(
+        `${BASE_URL}/follow/discover/${userCon?._id}`,
+      );
 
       console.log('all user', response);
       setDiscoverUser(response?.data);
@@ -38,9 +47,11 @@ export default function Discover() {
     }
   };
 
-  const getFollowingUser = async () =>{
+  const getFollowingUser = async () => {
     try {
-      const response = await axios.get(`${BASE_URL}/follow/following/${userCon?._id}`);
+      const response = await axios.get(
+        `${BASE_URL}/follow/following/${userCon?._id}`,
+      );
 
       console.log('following user', response);
       setFollowingUser(response?.data?.data);
@@ -49,113 +60,119 @@ export default function Discover() {
     }
   };
 
-
-  useEffect(()=>{
+  useEffect(() => {
     getDiscoverUser();
     getFollowingUser();
-  },[]);
+  }, []);
 
-  const handleFollow = async(followingId) =>{
+  const handleFollow = async followingId => {
     const token = await getDataFromStore('token');
     const payload = {
-      followerId : userCon._id
-      , followingId
-    }
+      followerId: userCon._id,
+      followingId,
+    };
     try {
-      const response = await axios.post(`${BASE_URL}/follow/follow`,payload ,{ 
-        headers:{
-          Authorization: `Bearer ${token}`
-        }
-       })
-       console.log('response', response)
+      const response = await axios.post(`${BASE_URL}/follow/follow`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      console.log('response', response);
     } catch (err) {
-      console.log('error while following', err.response)
+      console.log('error while following', err.response);
     }
-  }
-
+  };
 
   return (
     <>
       <View style={styles.container}>
-        <View style={styles.header} >
-          <View style={{ flexDirection: 'row' }} >
-              <TouchableOpacity 
-                onPress={() => setActiveTab("discover")}
-                style={styles.tabButton}
-              >
-                <Text
-                  style={{ 
-                    fontSize: 14,
-                    color: activeTab === "discover" ? 'white' : '#94A3B8', 
-                    fontWeight: 700, 
-                    marginRight: 40 
-                    }}
-                > 
-                  Discover
-                </Text>
-              </TouchableOpacity>
+        <View style={styles.header}>
+          <View style={{flexDirection: 'row'}}>
+            <TouchableOpacity
+              onPress={() => setActiveTab('discover')}
+              style={styles.tabButton}>
+              <Text
+                style={{
+                  fontSize: 14,
+                  color: activeTab === 'discover' ? 'white' : '#94A3B8',
+                  fontWeight: 700,
+                  marginRight: 40,
+                }}>
+                Discover
+              </Text>
+            </TouchableOpacity>
 
-              <TouchableOpacity 
-                onPress={() => setActiveTab("follow")}
-                style={styles.tabButton}
-              >
-                <Text 
-                  style={{ 
-                    fontSize: 14, 
-                    color: activeTab === "follow" ? 'white' : '#94A3B8', 
-                    fontWeight: 700 
-                  }} 
-                >
-                  Follow
-                </Text>
-              </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setActiveTab('follow')}
+              style={styles.tabButton}>
+              <Text
+                style={{
+                  fontSize: 14,
+                  color: activeTab === 'follow' ? 'white' : '#94A3B8',
+                  fontWeight: 700,
+                }}>
+                Follow
+              </Text>
+            </TouchableOpacity>
           </View>
-          <Icon style={styles.bellIcon} size={20} name='bell' />
+          <Icon style={styles.bellIcon} size={20} name="bell" />
         </View>
 
-        {activeTab === "discover" && (
+        {activeTab === 'discover' && (
           <ScrollView
-          horizontal={false}
-          vertical={true}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
-          showsHorizontalScrollIndicator={false} style={styles.contentContainer}>
-            {
-              discoverUser.map((user) => {
-                const profileUrl = `${BACKEND_URL}/${user?.profile.replace(/\\/g, '/')}`;
-                return(
-                  <TouchableOpacity onPress={() => handleFollow(user._id)} key={user._id}>
-                    <DiscoverCard id={user?._id} name={user?.name} image={ String(profileUrl)} />
-                  </TouchableOpacity>
-              )})
+            horizontal={false}
+            vertical={true}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
             }
-          </ScrollView>
-        )} 
-
-        {activeTab === "follow" && (
-          <ScrollView
-          horizontal={false}
-          vertical={true}
-          showsHorizontalScrollIndicator={false} style={styles.contentContainer}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
-          >
-            {
-              followingUser.map( user => {
-                const profileUrl = `${BACKEND_URL}/${user?.followingId?.profile?.replace(/\\/g,'/')}`;
-                return(
-                  <TouchableOpacity key={user?._id}>
-                    <FollowCard name={user?.followingId?.name} image={String(profileUrl)} />
-                  </TouchableOpacity>
-                )
-              })
-            }
-            
+            showsHorizontalScrollIndicator={false}
+            style={styles.contentContainer}>
+            {discoverUser.map(user => {
+              const profileUrl = `${BACKEND_URL}/${user?.profile.replace(
+                /\\/g,
+                '/',
+              )}`;
+              return (
+                <TouchableOpacity
+                  onPress={() => handleFollow(user._id)}
+                  key={user._id}>
+                  <DiscoverCard
+                    id={user?._id}
+                    name={user?.name}
+                    image={String(profileUrl)}
+                  />
+                </TouchableOpacity>
+              );
+            })}
           </ScrollView>
         )}
 
+        {activeTab === 'follow' && (
+          <ScrollView
+            horizontal={false}
+            vertical={true}
+            showsHorizontalScrollIndicator={false}
+            style={styles.contentContainer}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            }>
+            {followingUser.map(user => {
+              const profileUrl = `${BACKEND_URL}/${user?.followingId?.profile?.replace(
+                /\\/g,
+                '/',
+              )}`;
+              return (
+                <TouchableOpacity key={user?._id}>
+                  <FollowCard
+                    name={user?.followingId?.name}
+                    image={String(profileUrl)}
+                    id={user?.followingId?._id}
+                  />
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        )}
       </View>
     </>
   );
@@ -164,16 +181,16 @@ export default function Discover() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0F172A",
-    padding: 15
+    backgroundColor: '#0F172A',
+    padding: 15,
   },
-  header:{
+  header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 20
+    marginBottom: 20,
   },
-  bellIcon:{
-    color: "#94A3B8",
+  bellIcon: {
+    color: '#94A3B8',
   },
   tabButton: {
     paddingVertical: 5,
@@ -183,8 +200,6 @@ const styles = StyleSheet.create({
   },
   contentText: {
     color: 'white',
-    fontSize: 16
-  }
+    fontSize: 16,
+  },
 });
-
-
