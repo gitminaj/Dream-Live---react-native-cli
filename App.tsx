@@ -66,21 +66,8 @@ function App(): React.JSX.Element {
               <Stack.Screen name="UpdatePost" component={UpdatePost} />
               <Stack.Screen name="MyPosts" component={MyPosts} />
               <Stack.Screen name="CustomGallery" component={CustomGallery} />
-              {/* <Stack.Screen 
-        name="GalleryPicker" 
-        component={GalleryPicker}
-        options={{
-          headerShown: false,
-          presentation: 'transparentModal',
-          // cardStyle: { backgroundColor: 'transparent' },
-          // animationEnabled: true,
-        }}
-      /> */}
             </Stack.Navigator>
           </NavigationContainer>
-        {/* </Chat>
-      </OverlayProvider> */}
-      {/* <Toast /> */}
     </UserContextProvider>
     </GestureHandlerRootView>
 

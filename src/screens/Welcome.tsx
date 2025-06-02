@@ -1,8 +1,9 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useContext } from 'react';
 import { View, Animated, StyleSheet, Image, StatusBar } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import { getDataFromStore, removeDataFromStore } from '../store';
+import { socket } from '../utils/socket';
 
 export default function WelcomeScreen() {
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -11,6 +12,8 @@ export default function WelcomeScreen() {
 
   const [currentImage, setCurrentImage] = useState(require('../assets/firstImg.png'));
   const secondImage = require('../assets/secondImg.png');
+
+  
 
   useEffect(() => {
     // Initial fade in with scale effect
@@ -46,6 +49,22 @@ export default function WelcomeScreen() {
 
     return () => clearTimeout(timeout);
   }, []);
+
+  useEffect(()=>{
+      const handle = async () => {
+        // await removeDataFromStore('token')
+        const token = await getDataFromStore('token');
+        const user = await getDataFromStore('user');
+        console.log('token', token);
+        console.log('user welcome', user)
+        if(token && user){
+
+  console.log('user welcome', user);
+  socket.emit('authenticate', {userId: user?._id});
+        }
+      }
+      handle();
+  },[]);
 
   return (
     <View style={styles.container}>

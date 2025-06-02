@@ -1,6 +1,4 @@
 import { io } from 'socket.io-client';
-import {BACKEND_URL} from 'constants';
+import {BACKEND_URL} from './constant.ts';
 
-export const socket = io(BACKEND_URL, {
-  transports: ['websocket'],
-});
+export const socket = io.connect(BACKEND_URL);

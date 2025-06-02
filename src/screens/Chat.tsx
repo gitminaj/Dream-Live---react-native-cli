@@ -1,9 +1,17 @@
 import { useState } from "react";
 import { View, Text, StyleSheet, Image, ScrollView } from "react-native";
 import Icon from "react-native-vector-icons/Entypo";
+import { useRoute } from '@react-navigation/native';
+import { socket } from '../utils/socket';
 
 
 export default function Chat() {
+  const route = useRoute();
+  const { roomId, receiverUserId } = route.params;
+
+  console.log('roomid, receiveruserid', roomId,receiverUserId);
+
+  socket.emit('hi', "hi");
 
   return (
     <>

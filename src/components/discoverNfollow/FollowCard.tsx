@@ -20,13 +20,13 @@ export default function FollowCard({name, image, id}) {
   const { user } = useContext(UserContext);
   const navigation = useNavigation();
 
-  const handleChat = async () => {
+const handleChat = async () => {
     const token = await getDataFromStore('token');
     console.log('token', token);
     console.log('user', user);
 
     const payload = {
-      userId: user._id  ,
+      userId: user._id,
       receiverId: id
     }
 
@@ -45,7 +45,7 @@ export default function FollowCard({name, image, id}) {
 
     console.log('existing room', existingRoom);
 
-    let roomId = existingRoom?.data?.data?.id;
+    let roomId = existingRoom?.data?.data?._id;
     if (!roomId) {
       const res = await axios.post(`${BASE_URL}/chat/rooms`, {
         participants: [user._id, id]
@@ -54,12 +54,11 @@ export default function FollowCard({name, image, id}) {
       roomId = res.data.roomId;
     }
 
-    navigation.navigate('Chat', {roomId, receiverUserId: id});
+    navigation.navigate('Chat', {roomId, receiverUserId: id, currentUserId: user._id});
     } catch (error) {
       console.log('error: ', error)
     }
 
-    
   };
 
   return (
