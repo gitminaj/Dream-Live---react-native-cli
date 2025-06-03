@@ -18,6 +18,7 @@ import axios from "axios";
 import { BASE_URL } from "../../utils/constant";
 import { storeDataInStore } from "../../store";
 import { UserContext } from "../../utils/context/user-context";
+import { socket } from "../../utils/socket";
 
 export default function Login() {
     const navigation = useNavigation();
@@ -51,6 +52,8 @@ export default function Login() {
         await storeDataInStore('user', user);
         // await storeDataInStore('streamToken', streamToken);
         refreshAllUserData();
+        
+          socket.emit('authenticate', {userId: user?._id});
         navigation.replace('Home');
       } catch (err) {
         console.log('error: ', err?.response?.data);

@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, {useContext} from 'react';
 import {
   View,
   Text,
@@ -9,56 +9,69 @@ import {
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import axios from 'axios';
-import { BASE_URL} from '../../utils/constant';
+import {BASE_URL} from '../../utils/constant';
 import {getDataFromStore} from '../../store';
-import { UserContext } from "../../utils/context/user-context";
+import {UserContext} from '../../utils/context/user-context';
 
 const Width = Dimensions.get('window').width;
 const bannerWidth = Width * 0.4;
 
 export default function FollowCard({name, image, id}) {
-  const { user } = useContext(UserContext);
+  const {user} = useContext(UserContext);
   const navigation = useNavigation();
 
-const handleChat = async () => {
+  const handleChat = async () => {
     const token = await getDataFromStore('token');
     console.log('token', token);
     console.log('user', user);
 
     const payload = {
       userId: user._id,
-      receiverId: id
-    }
+      receiverId: id,
+    };
 
-    console.log('payload',payload);
+    console.log('payload', payload);
+
+    let roomId;
+    let roomDetails;
 
     try {
       const existingRoom = await axios.post(
-      `${BASE_URL}/chat/rooms/privateroom`,
-      payload,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
+        `${BASE_URL}/chat/rooms/privateroom`,
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         },
-      },
-    );
-
-    console.log('existing room', existingRoom);
-
-    let roomId = existingRoom?.data?.data?._id;
-    if (!roomId) {
-      const res = await axios.post(`${BASE_URL}/chat/rooms`, {
-        participants: [user._id, id]
-      });
-      console.log('res',res);
-      roomId = res.data.roomId;
-    }
-
-    navigation.navigate('Chat', {roomId, receiverUserId: id, currentUserId: user._id});
+      );
+      console.log('existing room', existingRoom);
+      roomDetails = existingRoom?.data;
+      roomId = existingRoom?.data?.data?._id;
     } catch (error) {
-      console.log('error: ', error)
+      console.log('Room not found, creating new one...');
     }
 
+    if (!roomId) {
+      try {
+        const res = await axios.post(
+          `${BASE_URL}/chat/rooms/createPrivateRoom`,
+          payload,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
+        console.log('New room created', res);
+        roomDetails = res?.data;
+        roomId = res.data.roomId;
+      } catch (error) {
+        console.log('Error creating room:', error);
+      }
+    }
+
+    navigation.navigate('Chat', {roomId, receiverUserId: id, roomDetails });
   };
 
   return (
