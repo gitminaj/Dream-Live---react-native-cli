@@ -24,6 +24,7 @@ import MaterialCommunityIcon from 'react-native-vector-icons/MaterialCommunityIc
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import { BACKEND_URL } from '../utils/constant';
 import MyPosts from './post/MyPosts';
+import { socket } from '../utils/socket';
 
 const MenuItem = ({icon, onPress, title}) => {
   return (
@@ -67,6 +68,7 @@ const Profile = () => {
 
 const handleLogout = async () => {
   try {
+    socket.disconnect();
     await removeDataFromStore('token');
     await removeDataFromStore('user');
 

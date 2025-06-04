@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import Icon from "react-native-vector-icons/Entypo";
+import FontAwesome from "react-native-vector-icons/FontAwesome";
 import { useRoute } from "@react-navigation/native";
 import { socket } from "../utils/socket";
 import { BACKEND_URL, BASE_URL } from "../utils/constant";
@@ -24,40 +25,48 @@ export default function ChatScreen() {
   const [messages, setMessages] = useState([]);
   const [currentUserId, setCurrentUserId] = useState(null);
   const [currentMessage, setCurrentMessage] = useState("");
+  const [receiverInfo, setReceiverInfo] = useState();
   const flatListRef = useRef();
 
-  const receiverDetails = roomDetails?.data?.participants.filter(
+
+
+  useEffect(() => {
+  const initialReceiver = roomDetails?.data?.participants.find(
     (user) => user._id === receiverUserId
   );
+  setReceiverInfo(initialReceiver);
+  console.log(receiverInfo)
+}, [receiverUserId, roomDetails]);
 
-  const formatLastSeen = (receiverDetails) => {
-    const last = new Date(receiverDetails[0]?.lastSeen);
-    const now = new Date();
-    const diffMs = now - last;
-    const diffSec = Math.floor(diffMs / 1000);
-    const diffMin = Math.floor(diffSec / 60);
-    const diffHours = Math.floor(diffMin / 60);
-    const diffDays = Math.floor(diffHours / 24);
 
-    if (receiverDetails[0]?.isOnline) {
-      return "Online";
-    }
+const formatLastSeen = (info) => {
+  if (!info) return '';
 
-    const sameDay = last.toDateString() === now.toDateString();
-    if (sameDay) {
-      return `Last seen today at ${last.toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      })}`;
-    } else if (diffDays === 1) {
-      return `Last seen yesterday at ${last.toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      })}`;
-    } else {
-      return `Last seen ${diffDays} days ago`;
-    }
-  };
+  const last = new Date(info.lastSeen);
+  const now = new Date();
+  const diffMs = now - last;
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  if (info.isOnline) {
+    return "Online";
+  }
+
+  const sameDay = last.toDateString() === now.toDateString();
+  if (sameDay) {
+    return `Last seen today at ${last.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    })}`;
+  } else if (diffDays === 1) {
+    return `Last seen yesterday at ${last.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    })}`;
+  } else {
+    return `Last seen ${diffDays} days ago`;
+  }
+};
+
 
   useEffect(() => {
     const setupSocket = async () => {
@@ -92,6 +101,30 @@ export default function ChatScreen() {
 
     setupSocket();
   }, [roomId]);
+
+  useEffect(() => {
+  socket.on("userOnline", ({ userId }) => {
+    if (userId === receiverUserId) {
+      setReceiverInfo((prev) => ({ ...prev, isOnline: true }));
+    }
+  });
+
+  socket.on("userOffline", ({ userId }) => {
+    if (userId === receiverUserId) {
+      setReceiverInfo((prev) => ({
+        ...prev,
+        isOnline: false,
+        lastSeen: new Date().toISOString(),
+      }));
+    }
+  });
+
+  return () => {
+    socket.off("userOnline");
+    socket.off("userOffline");
+  };
+}, [receiverUserId]);
+
 
   const sendMessage = () => {
     if (!currentMessage.trim()) return;
@@ -134,16 +167,16 @@ export default function ChatScreen() {
         <Image
           style={styles.profileImage}
           source={{
-            uri: `${BACKEND_URL}/${receiverDetails[0]?.profile.replace(
+            uri: `${BACKEND_URL}/${receiverInfo?.profile.replace(
               /\\/g,
               "/"
             )}`,
           }}
         />
         <View style={{ flex: 1 }}>
-          <Text style={styles.name}>{receiverDetails[0]?.name}</Text>
+          <Text style={styles.name}>{receiverInfo?.name}</Text>
           <Text style={{ color: "gray", fontSize: 10 }}>
-            {formatLastSeen(receiverDetails)}
+            {formatLastSeen(receiverInfo)}
           </Text>
         </View>
         <Icon name="dots-three-horizontal" size={20} style={styles.icon} />
@@ -171,7 +204,7 @@ export default function ChatScreen() {
           underlineColorAndroid="transparent"
         />
         <TouchableOpacity onPress={sendMessage} style={styles.sendButton}>
-          <Text style={styles.sendButtonText}>Send</Text>
+          <Text style={styles.sendButtonText}><FontAwesome name='send'/></Text>
         </TouchableOpacity>
       </View>
     </View>
