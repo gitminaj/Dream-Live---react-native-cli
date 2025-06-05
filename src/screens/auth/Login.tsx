@@ -52,6 +52,10 @@ export default function Login() {
         await storeDataInStore('user', user);
         // await storeDataInStore('streamToken', streamToken);
         refreshAllUserData();
+
+        if (socket.disconnected) {
+  socket.connect();
+}
         
           socket.emit('authenticate', {userId: user?._id});
         navigation.replace('Home');

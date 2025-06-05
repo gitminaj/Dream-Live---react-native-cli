@@ -87,8 +87,9 @@ const MessageList = () => {
         
     return (
     <TouchableOpacity
+    key={item._id}
       style={styles.chatItem}
-      onPress={() => navigation.navigate('Chat', {roomId: item?._id , receiverUserId: users._id , roomDetails: item})}>
+      onPress={() => navigation.navigate('Chat', {roomId: item?._id , receiverUserId: users[0]?._id , roomDetails:{ data: item}})}>
       <Image source={{
                   uri: `${BACKEND_URL}/${users[0]?.profile?.replace(
                     /\\/g,
