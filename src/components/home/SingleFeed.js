@@ -9,7 +9,7 @@ export default function SingleFeed({name, image}) {
         <View style={styles.androidShadowContainer}>
           <View style={styles.outerContainer}>
             <ImageBackground
-              source={image}
+              source={{uri : image}}
               style={styles.image}
               imageStyle={styles.imageStyle}
             >

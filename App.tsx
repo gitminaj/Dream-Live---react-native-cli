@@ -28,6 +28,7 @@ import UpdatePost from './src/screens/post/UpdatePost';
 // import GalleryPicker from './src/screens/post/GalleryPicker';
 import CustomGallery from './src/screens/post/CustomGallery';
 import MyPosts from './src/screens/post/MyPosts';
+import ChatRoom from './src/screens/chatRoom/ChatRoom';
 
 import { UserContextProvider } from './src/utils/context/user-context';
 // import { streamClient } from './src/utils/streamClient';
@@ -66,6 +67,7 @@ function App(): React.JSX.Element {
               <Stack.Screen name="UpdatePost" component={UpdatePost} />
               <Stack.Screen name="MyPosts" component={MyPosts} />
               <Stack.Screen name="CustomGallery" component={CustomGallery} />
+              <Stack.Screen name="ChatRoom" component={ChatRoom} />
             </Stack.Navigator>
           </NavigationContainer>
     </UserContextProvider>

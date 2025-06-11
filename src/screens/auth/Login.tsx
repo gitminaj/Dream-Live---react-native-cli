@@ -60,7 +60,7 @@ export default function Login() {
           socket.emit('authenticate', {userId: user?._id});
         navigation.replace('Home');
       } catch (err) {
-        console.log('error: ', err?.response?.data);
+        console.log('error: ', err);
       setError(err.response?.data?.message || 'Login failed');
       }
     }else{
