@@ -31,6 +31,7 @@ import MyPosts from './src/screens/post/MyPosts';
 import ChatRoom from './src/screens/chatRoom/ChatRoom';
 
 import { UserContextProvider } from './src/utils/context/user-context';
+import CreateChatRoom from './src/screens/chatRoom/CreateChatRoom';
 // import { streamClient } from './src/utils/streamClient';
 
 
@@ -67,6 +68,7 @@ function App(): React.JSX.Element {
               <Stack.Screen name="UpdatePost" component={UpdatePost} />
               <Stack.Screen name="MyPosts" component={MyPosts} />
               <Stack.Screen name="CustomGallery" component={CustomGallery} />
+              <Stack.Screen name="CreateChatRoom" component={CreateChatRoom} />
               <Stack.Screen name="ChatRoom" component={ChatRoom} />
             </Stack.Navigator>
           </NavigationContainer>

@@ -420,7 +420,7 @@ export default function Home() {
                       }),
                     ]).start();
 
-                    navigation.navigate('ChatRoom');
+                    navigation.navigate('CreateChatRoom');
                   }}>
                   <SingleFeed name={feed.name} image={image} />
                 </TouchableOpacity>
