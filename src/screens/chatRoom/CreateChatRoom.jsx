@@ -13,8 +13,10 @@ import {
 import Icon from 'react-native-vector-icons/Ionicons';
 import {launchImageLibrary} from 'react-native-image-picker';
 import axios from 'axios';
-import { BACKEND_URL } from '../../utils/constant';
-import { getDataFromStore } from '../../store';
+import {BASE_URL} from '../../utils/constant';
+import {getDataFromStore} from '../../store';
+
+import * as Burnt from 'burnt';
 
 const CreateRoomScreen = ({navigation}) => {
   const [selectedImage, setSelectedImage] = useState(null);
@@ -24,9 +26,9 @@ const CreateRoomScreen = ({navigation}) => {
     name: '',
     description: '',
     maxParticipants: '',
-    picture: '',
   });
-  
+  const [fileData, setFileData] = useState('');
+
   const participantOptions = ['7', '8', '10', '15', '25'];
 
   const selectImage = () => {
@@ -37,38 +39,70 @@ const CreateRoomScreen = ({navigation}) => {
       maxWidth: 2000,
     };
 
-    launchImageLibrary(options, (response) => {
+    launchImageLibrary(options, response => {
       if (response.didCancel || response.error) {
         console.log('User cancelled or error');
       } else if (response.assets && response.assets[0]) {
         setSelectedImage(response.assets[0]);
+        const asset = response.assets[0];
+
+        setFileData({
+          uri: asset.uri,
+          type: asset.type || 'image/jpeg',
+          name: asset.fileName || 'photo.jpg',
+        });
       }
     });
   };
 
-  const selectParticipants = (value) => {
+  const selectParticipants = value => {
     setSelectedParticipants(value);
     setShowDropdown(false);
   };
 
-  const handleChange = (fieldName, value) =>{
-    setForm({...form, [fieldName]: value})
-  }
+  const handleChange = (fieldName, value) => {
+    setForm({...form, [fieldName]: value});
+  };
 
-  const handleSubmit = async () =>{
+  const handleSubmit = async () => {
     const token = await getDataFromStore('token');
     console.log('form', form);
+    const payload = {
+      ...form,
+      picture: fileData,
+      maxParticipants: selectedParticipants,
+    };
+    console.log('payload', payload);
+    const formDataTosubmit = new FormData();
+
+    Object.keys(payload).forEach(key => {
+      formDataTosubmit.append(key, payload[key]);
+    });
+
     try {
-        const response = await axios.post(`${BACKEND_URL}/chat/rooms`,
-            form,
-            {headers:{
-                Authorization: `Bearer ${token}`
-            }}
-        )
+      console.log('final form', formDataTosubmit);
+      const response = await axios.post(
+        `${BASE_URL}/chat/rooms`,
+        formDataTosubmit,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data',
+          },
+        },
+      );
+      console.log('res', response);
+      if (response.data.success) {
+        Burnt.toast({
+          title: 'Room created Successfully!',
+          preset: 'done',
+        });
+        navigation.replace('ChatRoom',{ ChatRoomId: response?.data?.chatRoom?._id, chatRoom: response?.data?.chatRoom  });
+      }
     } catch (err) {
-        console.log('error', err)
+      console.log('error', err);
     }
-  }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -86,7 +120,10 @@ const CreateRoomScreen = ({navigation}) => {
         <Text style={styles.label}>Room Picture</Text>
         <TouchableOpacity style={styles.imageSelector} onPress={selectImage}>
           {selectedImage ? (
-            <Image source={{uri: selectedImage.uri}} style={styles.selectedImage} />
+            <Image
+              source={{uri: selectedImage.uri}}
+              style={styles.selectedImage}
+            />
           ) : (
             <View style={styles.imagePlaceholder}>
               <Icon name="camera" size={32} color="#ccc" />
@@ -100,7 +137,7 @@ const CreateRoomScreen = ({navigation}) => {
           placeholder="Please Enter Name..."
           placeholderTextColor="#ccc"
           style={styles.input}
-          onChangeText={ name => handleChange('name', name)}
+          onChangeText={name => handleChange('name', name)}
         />
 
         <Text style={styles.label}>Room Description</Text>
@@ -111,38 +148,41 @@ const CreateRoomScreen = ({navigation}) => {
           multiline
           numberOfLines={5}
           textAlignVertical="top"
-          onChangeText={ des => handleChange('description', des)}
+          onChangeText={des => handleChange('description', des)}
         />
 
         <Text style={styles.label}>Room Participants Limit</Text>
         <View style={styles.dropdownContainer}>
-          <TouchableOpacity 
-            style={styles.selector} 
-            onPress={() => setShowDropdown(!showDropdown)}
-          >
-            <Text style={styles.selectorText}>{selectedParticipants} participants</Text>
-            <Icon 
-              name={showDropdown ? "chevron-up" : "chevron-down"} 
-              size={20} 
-              color="#fff" 
+          <TouchableOpacity
+            style={styles.selector}
+            onPress={() => setShowDropdown(!showDropdown)}>
+            <Text style={styles.selectorText}>
+              {selectedParticipants} participants
+            </Text>
+            <Icon
+              name={showDropdown ? 'chevron-up' : 'chevron-down'}
+              size={20}
+              color="#fff"
             />
           </TouchableOpacity>
-          
+
           {showDropdown && (
             <View style={styles.dropdown}>
-              {participantOptions.map((option) => (
+              {participantOptions.map(option => (
                 <TouchableOpacity
                   key={option}
                   style={[
                     styles.dropdownItem,
-                    selectedParticipants === option && styles.selectedDropdownItem
+                    selectedParticipants === option &&
+                      styles.selectedDropdownItem,
                   ]}
-                  onPress={() => selectParticipants(option)}
-                >
-                  <Text style={[
-                    styles.dropdownItemText,
-                    selectedParticipants === option && styles.selectedDropdownItemText
-                  ]}>
+                  onPress={() => selectParticipants(option)}>
+                  <Text
+                    style={[
+                      styles.dropdownItemText,
+                      selectedParticipants === option &&
+                        styles.selectedDropdownItemText,
+                    ]}>
                     {option} participants
                   </Text>
                 </TouchableOpacity>

@@ -1,292 +1,651 @@
-import React from 'react';
+import React, { useState, useEffect, useRef, useContext } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
   ScrollView,
-  SafeAreaView,
-  StatusBar,
+  Image,
+  TextInput,
+  TouchableOpacity,
+  FlatList,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import Ionicons from 'react-native-vector-icons/Ionicons';
-import LinearGradient from 'react-native-linear-gradient';
+import AntDesign from 'react-native-vector-icons/AntDesign';
+import Feather from 'react-native-vector-icons/Feather';
+import io from 'socket.io-client';
+import { BACKEND_URL, BASE_URL } from '../../utils/constant';
+import { getDataFromStore } from '../../store';
+import axios from 'axios';
+import { UserContext } from '../../utils/context/user-context';
 
-const ChatRoom = () => {
-  // Sample data for users wanting to join
-  const joinRequests = [
-    { id: 1, name: 'jimmyjoe', action: 'join the room' },
-    { id: 2, name: 'princess', action: 'join the room' },
-    { id: 3, name: 'karmalotloz', action: 'join the room' },
-    { id: 4, name: 'Samuel', action: 'join the room' },
-    { id: 5, name: 'luvfaice', action: 'join the room' },
-    { id: 6, name: 'Sunny', action: 'join the room' },
-  ];
+const LiveChatRoom = ({ navigation, route }) => {
+  const { chatRoomId, chatRoom } = route.params;
+  const { user } = useContext(UserContext);
+  const userId = user._id;
+  const [messages, setMessages] = useState([]);
+  const [messageText, setMessageText] = useState('');
+  const [onlineParticipants, setOnlineParticipants] = useState(chatRoom?.participants || []);
+  const [socket, setSocket] = useState(null);
+  const [isConnected, setIsConnected] = useState(false);
+  const messagesRef = useRef(null);
 
-  const renderPlusIcon = (index) => (
-    <TouchableOpacity key={index} style={styles.plusIconContainer}>
-      <Icon name="add" size={24} color="#8B5CF6" />
-    </TouchableOpacity>
-  );
+  useEffect(() => {
+    // Initialize socket connection
+    const socketInstance = io(BACKEND_URL, {
+      transports: ['websocket'],
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+    });
 
-  const renderJoinRequest = (item) => (
-    <View key={item.id} style={styles.joinRequestItem}>
-      <Text style={styles.joinRequestText}>
-        <Text style={styles.username}>{item.name}</Text>
-        <Text style={styles.actionText}> {item.action}</Text>
-      </Text>
+    setSocket(socketInstance);
+
+    // Socket event listeners
+    socketInstance.on('connect', () => {
+      console.log('Connected to socket server');
+      setIsConnected(true);
+      
+      // Authenticate user
+      socketInstance.emit('authenticate', { userId });
+    });
+
+    socketInstance.on('authenticated', (data) => {
+      if (data.success) {
+        // Join the group chat room
+        socketInstance.emit('joinGroupChatRoom', { chatRoomId });
+      }
+    });
+
+    socketInstance.on('joinedRoom', (data) => {
+      console.log('Joined room:', data.chatRoomId);
+      loadMessages();
+      // Refresh chatroom data to get updated participants
+      refreshChatRoom();
+    });
+
+    socketInstance.on('newMessage', (message) => {
+      // Remove any temporary message with the same tempId or content from same user
+      setMessages(prev => {
+        const filteredMessages = prev.filter(msg => {
+          // Remove temp message with matching tempId
+          if (msg.isTemp && message.tempId && msg._id === message.tempId) {
+            return false;
+          }
+          // Also remove temp messages with same content from same user to prevent duplicates
+          if (msg.isTemp && 
+              msg.content === message.content && 
+              msg.sender?._id === message.sender?._id) {
+            return false;
+          }
+          return true;
+        });
+        
+        // Only add the new message if it's not from the current user (to avoid duplicates)
+        // Or if it's from current user but replacing a temp message
+        const hasTempMessage = prev.some(msg => 
+          msg.isTemp && (
+            (message.tempId && msg._id === message.tempId) ||
+            (msg.content === message.content && msg.sender?._id === message.sender?._id)
+          )
+        );
+        
+        if (message.sender?._id !== userId || hasTempMessage) {
+          return [...filteredMessages, message];
+        }
+        
+        return filteredMessages;
+      });
+      scrollToBottom();
+    });
+
+    socketInstance.on('userJoinedRoom', (data) => {
+      console.log('User joined room:', data);
+      
+      // Refresh chatroom data to get updated participants list
+      refreshChatRoom();
+
+      // Add join notification
+      const joinMessage = {
+        _id: `join_${Date.now()}`,
+        content: `${data.userName || 'Someone'} joined the chat`,
+        messageType: 'system',
+        createdAt: new Date().toISOString(),
+      };
+      setMessages(prev => [...prev, joinMessage]);
+    });
+
+    socketInstance.on('userLeftRoom', (data) => {
+      console.log('User left room:', data);
+      
+      // Refresh chatroom data to get updated participants list
+      refreshChatRoom();
+
+      // Add leave notification
+      const leaveMessage = {
+        _id: `leave_${Date.now()}`,
+        content: `${data.userName || 'Someone'} left the chat`,
+        messageType: 'system',
+        createdAt: new Date().toISOString(),
+      };
+      setMessages(prev => [...prev, leaveMessage]);
+    });
+
+    socketInstance.on('userOnline', (data) => {
+      console.log('User online:', data);
+      // Refresh chatroom data to get latest participant status
+      refreshChatRoom();
+    });
+
+    socketInstance.on('userOffline', (data) => {
+      console.log('User offline:', data);
+      // Refresh chatroom data to get latest participant status
+      refreshChatRoom();
+    });
+
+    // Handle updated participants list from server (optional - keep as fallback)
+    socketInstance.on('participantsUpdated', (data) => {
+      console.log('Participants updated via socket:', data);
+      if (data.participants) {
+        setOnlineParticipants(data.participants);
+      }
+    });
+
+    socketInstance.on('disconnect', () => {
+      console.log('Disconnected from socket server');
+      setIsConnected(false);
+    });
+
+    socketInstance.on('error', (error) => {
+      console.error('Socket error:', error);
+      Alert.alert('Error', error.message || 'Connection error');
+    });
+
+    return () => {
+      if (socketInstance) {
+        socketInstance.emit('leaveRoom', { chatRoomId });
+        socketInstance.disconnect();
+      }
+    };
+  }, [chatRoomId, userId]);
+
+  const loadMessages = async () => {
+    const token = await getDataFromStore('token');
+    try {
+      const response = await axios.get(
+        `${BASE_URL}/chat/rooms/${chatRoomId}/messages`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      console.log('messg res', response);
+      
+      if (response?.data?.success) {
+        setMessages(response?.data?.messages || []);
+        setTimeout(() => scrollToBottom(), 100);
+      }
+    } catch (error) {
+      console.error('Error loading messages:', error);
+    }
+  };
+
+  // Function to refresh chatroom data and update participants
+  const refreshChatRoom = async () => {
+    const token = await getDataFromStore('token');
+    try {
+      const response = await axios.get(
+        `${BASE_URL}/chat/rooms/${chatRoomId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      if (response?.data?.success && response?.data?.chatRoom) {
+        setOnlineParticipants(response.data.chatRoom.participants || []);
+        console.log('Updated participants:', response.data.chatRoom.participants);
+      }
+    } catch (error) {
+      console.error('Error refreshing chatroom:', error);
+    }
+  };
+
+  const sendMessage = () => {
+    if (!messageText.trim() || !socket || !isConnected) return;
+
+    const tempId = `temp_${Date.now()}`;
+    const messageData = {
+      tempId,
+      content: messageText.trim(),
+      chatRoomId,
+      messageType: 'text',
+    };
+
+    // Add temporary message to UI
+    const tempMessage = {
+      _id: tempId,
+      content: messageText.trim(),
+      sender: { _id: userId, name: user.name || 'You' },
+      messageType: 'text',
+      createdAt: new Date().toISOString(),
+      isTemp: true,
+    };
+
+    setMessages(prev => [...prev, tempMessage]);
+    setMessageText('');
+    scrollToBottom();
+
+    // Send via socket
+    socket.emit('sendMessage', messageData);
+  };
+
+  const scrollToBottom = () => {
+    if (messagesRef.current) {
+      setTimeout(() => {
+        messagesRef.current.scrollToEnd({ animated: true });
+      }, 100);
+    }
+  };
+
+  const renderParticipant = ({ item }) => (
+    <View style={styles.participantContainer}>
+      <Image
+        source={{
+          uri: item.profile 
+            ? `${BACKEND_URL}/${item.profile.replace(/\\/g, '/')}`
+            : 'https://via.placeholder.com/40'
+        }}
+        style={[
+          styles.participantAvatar,
+          { borderColor: item.isOnline ? '#4CAF50' : '#666' }
+        ]}
+      />
+      <View style={styles.onlineIndicator(item.isOnline)} />
     </View>
   );
 
+  const renderMessage = ({ item, index }) => {
+    if (item.messageType === 'system') {
+      return (
+        <View style={styles.systemMessage}>
+          <Text style={styles.systemMessageText}>{item.content}</Text>
+        </View>
+      );
+    }
+
+    const isOwnMessage = item.sender?._id === userId;
+    const senderName = isOwnMessage ? 'You' : (item.sender?.name || 'Unknown');
+    
+    // Show sender name only if it's different from previous message sender
+    const previousMessage = messages[index - 1];
+    const showSenderName = !previousMessage || 
+      previousMessage.messageType === 'system' ||
+      previousMessage.sender?._id !== item.sender?._id;
+
+    return (
+      <View style={styles.messageWrapper}>
+        <View style={styles.messageContainer}>
+          <View style={styles.messageHeader}>
+            <Image
+              source={{
+                uri: item.sender?.profile 
+                  ? `${BACKEND_URL}/${item.sender.profile.replace(/\\/g, '/')}`
+                  : 'https://via.placeholder.com/32'
+              }}
+              style={styles.messageSenderAvatar}
+            />
+            <View style={styles.messageContent}>
+              {showSenderName && (
+                <Text style={[
+                  styles.senderName,
+                  { color: isOwnMessage ? '#4A90E2' : '#FF6B6B' }
+                ]}>
+                  {senderName}
+                </Text>
+              )}
+              <View style={[
+                styles.messageBubble,
+                item.isTemp && styles.tempMessage
+              ]}>
+                <Text style={styles.messageText}>{item.content}</Text>
+              </View>
+              <Text style={styles.messageTime}>
+                {new Date(item.createdAt).toLocaleTimeString([], { 
+                  hour: '2-digit', 
+                  minute: '2-digit' 
+                })}
+                {item.isTemp && (
+                  <Text style={styles.sendingIndicator}> • Sending...</Text>
+                )}
+              </Text>
+            </View>
+          </View>
+        </View>
+      </View>
+    );
+  };
+
   return (
-  <>
-     <SafeAreaView style={styles.container}>
-      {/* <StatusBar backgroundColor="#7C3AED" barStyle="light-content" /> */}
-      <LinearGradient
-              colors={['#471069', '#0F172A']}
-              locations={[0, 0.6]}
-              style={styles.linearGradient}
-            >
-      
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <View style={styles.userAvatar}>
-            <Text style={styles.avatarText}>Z</Text>
-          </View>
+    <KeyboardAvoidingView 
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+    >
+      {/* Top Bar */}
+      <View style={styles.topBar}>
+        <View style={styles.hostInfo}>
+          <Image
+            source={{
+              uri: chatRoom?.picture 
+                ? `${BACKEND_URL}/${chatRoom.picture.replace(/\\/g, '/')}`
+                : 'https://via.placeholder.com/40'
+            }}
+            style={styles.avatar}
+          />
           <View>
-            <Text style={styles.roomTitle}>Zara joe</Text>
-            <Text style={styles.onlineStatus}>• online 3572</Text>
+            <Text style={styles.hostName}>{chatRoom?.name}</Text>
+            <Text style={styles.participantCount}>
+              {onlineParticipants.length} participants
+            </Text>
           </View>
         </View>
-        <View style={styles.headerRight}>
-          <View style={styles.participantAvatars}>
-            <View style={[styles.smallAvatar, { backgroundColor: '#FF6B6B' }]}>
-              <Text style={styles.smallAvatarText}>A</Text>
-            </View>
-            <View style={[styles.smallAvatar, { backgroundColor: '#4ECDC4' }]}>
-              <Text style={styles.smallAvatarText}>B</Text>
-            </View>
-            <View style={[styles.smallAvatar, { backgroundColor: '#45B7D1' }]}>
-              <Text style={styles.smallAvatarText}>C</Text>
-            </View>
+        <View style={styles.statusIcons}>
+          <View style={styles.liveIndicator}>
+            <View style={styles.liveDot} />
+            <Text style={styles.liveText}>Live</Text>
           </View>
-          <TouchableOpacity style={styles.moreButton}>
-            <Icon name="more-horiz" size={24} color="white" />
+          <TouchableOpacity 
+            onPress={() => navigation.goBack()}
+            style={styles.closeButton}
+          >
+            <Feather name="x" size={24} color="#fff" />
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* Main Content */}
-      <View style={styles.mainContent}>
-        {/* User Avatar */}
-        <View style={styles.centerAvatar}>
-          <View style={styles.mainUserAvatar}>
-            <Text style={styles.mainAvatarText}>👤</Text>
-          </View>
+      {/* Connection Status */}
+      {!isConnected && (
+        <View style={styles.connectionStatus}>
+          <Text style={styles.connectionText}>Connecting...</Text>
         </View>
+      )}
 
-        {/* Plus Icons Grid */}
-        <View style={styles.plusIconsGrid}>
-          {Array.from({ length: 8 }, (_, index) => renderPlusIcon(index))}
-        </View>
-
-        {/* Join Requests */}
-        <ScrollView style={styles.joinRequestsContainer} showsVerticalScrollIndicator={false}>
-          {joinRequests.map(renderJoinRequest)}
-        </ScrollView>
+      {/* Participants Row */}
+      <View style={styles.participantsSection}>
+        <FlatList
+          data={onlineParticipants}
+          horizontal
+          renderItem={renderParticipant}
+          keyExtractor={(item) => item._id}
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.participantsList}
+          extraData={onlineParticipants} // Force re-render when participants change
+        />
       </View>
 
-      {/* Bottom Navigation */}
-      <View style={styles.bottomNav}>
-        <TouchableOpacity style={styles.bottomNavItem}>
-          <Text style={styles.bottomNavText}>White...</Text>
-        </TouchableOpacity>
-        
-        <View style={styles.bottomNavIcons}>
-          <TouchableOpacity style={styles.bottomNavIcon}>
-            <Ionicons name="happy-outline" size={24} color="white" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.bottomNavIcon}>
-            <MaterialCommunityIcons name="note-outline" size={24} color="white" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.bottomNavIcon}>
-            <MaterialCommunityIcons name="email-outline" size={24} color="white" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.bottomNavIcon}>
-            <MaterialCommunityIcons name="gift-outline" size={24} color="white" />
+      {/* Chat Messages */}
+      <FlatList
+        ref={messagesRef}
+        data={messages}
+        renderItem={renderMessage}
+        keyExtractor={(item) => item._id}
+        style={styles.messagesContainer}
+        contentContainerStyle={styles.messagesContent}
+        onContentSizeChange={scrollToBottom}
+        removeClippedSubviews={false}
+        initialNumToRender={20}
+        maxToRenderPerBatch={10}
+        windowSize={10}
+      />
+
+      {/* Message Input */}
+      <View style={styles.inputContainer}>
+        <View style={styles.inputWrapper}>
+          <TextInput
+            style={styles.messageInput}
+            value={messageText}
+            onChangeText={setMessageText}
+            placeholder="Type a message..."
+            placeholderTextColor="#888"
+            multiline
+            maxLength={500}
+            returnKeyType="send"
+            onSubmitEditing={sendMessage}
+            blurOnSubmit={false}
+          />
+          <TouchableOpacity 
+            style={[
+              styles.sendButton, 
+              { 
+                opacity: (messageText.trim() && isConnected) ? 1 : 0.5,
+                backgroundColor: (messageText.trim() && isConnected) ? '#4A90E2' : '#666'
+              }
+            ]}
+            onPress={sendMessage}
+            disabled={!messageText.trim() || !isConnected}
+          >
+            <Icon name="send" size={20} color="#fff" />
           </TouchableOpacity>
         </View>
-
-        <TouchableOpacity style={styles.joinButton}>
-          <Text style={styles.joinButtonText}>Join</Text>
-        </TouchableOpacity>
       </View>
-      </LinearGradient>
-    </SafeAreaView>
-  </>
-   
+    </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#0a0a0a',
   },
-  linearGradient: {
-    flex: 1,
-  },
-  header: {
+  topBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingTop: 50,
+    paddingBottom: 16,
+    backgroundColor: 'rgba(0,0,0,0.95)',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.1)',
   },
-  headerLeft: {
+  hostInfo: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  userAvatar: {
+  avatar: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#9333EA',
-    justifyContent: 'center',
-    alignItems: 'center',
     marginRight: 12,
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.2)',
   },
-  avatarText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  roomTitle: {
-    color: 'white',
+  hostName: {
+    color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
   },
-  onlineStatus: {
-    color: '#E0E7FF',
+  participantCount: {
+    color: '#bbb',
+    fontSize: 12,
+    marginTop: 2,
+  },
+  statusIcons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  liveIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 68, 88, 0.2)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  liveDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#FF4458',
+    marginRight: 6,
+  },
+  liveText: {
+    color: '#FF4458',
+    fontWeight: 'bold',
     fontSize: 12,
   },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  participantAvatars: {
-    flexDirection: 'row',
-    marginRight: 12,
-  },
-  smallAvatar: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: -4,
-  },
-  smallAvatarText: {
-    color: 'white',
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-  moreButton: {
+  closeButton: {
     padding: 4,
   },
-  mainContent: {
-    flex: 1,
+  connectionStatus: {
+    backgroundColor: '#FF4458',
+    paddingVertical: 6,
+    alignItems: 'center',
+  },
+  connectionText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  participantsSection: {
+    backgroundColor: 'rgba(0,0,0,0.8)',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.05)',
+  },
+  participantsList: {
     paddingHorizontal: 16,
   },
-  centerAvatar: {
-    alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 30,
+  participantContainer: {
+    position: 'relative',
+    marginRight: 12,
   },
-  mainUserAvatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#8B5CF6',
-    justifyContent: 'center',
-    alignItems: 'center',
+  participantAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 2,
   },
-  mainAvatarText: {
-    fontSize: 24,
-  },
-  plusIconsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    // justifyContent: 'space-between',
-    marginBottom: 30,
-  },
-  plusIconContainer: {
-    // width: '22%',
-    aspectRatio: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 20,
-    padding: 5, 
-    borderWidth: 1,
-    borderColor: '#8B5CF6',
-    borderStyle: 'dashed',
-    marginHorizontal: 15
-  },
-  joinRequestsContainer: {
+  onlineIndicator: (isOnline) => ({
+    position: 'absolute',
+    bottom: -1,
+    right: -1,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: isOnline ? '#4CAF50' : '#666',
+    borderWidth: 2,
+    borderColor: '#0a0a0a',
+  }),
+  messagesContainer: {
     flex: 1,
+    backgroundColor: '#0a0a0a',
   },
-  joinRequestItem: {
-    paddingVertical: 4,
-  },
-  joinRequestText: {
-    color: 'white',
-    fontSize: 14,
-  },
-  username: {
-    color: '#FCD34D',
-    fontWeight: 'bold',
-  },
-  actionText: {
-    color: '#E0E7FF',
-  },
-  bottomNav: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  messagesContent: {
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: 'rgba(0, 0, 0, 0.2)',
   },
-  bottomNavItem: {
+  messageWrapper: {
+    marginBottom: 16,
+  },
+  messageContainer: {
+    flexDirection: 'row',
+  },
+  messageHeader: {
+    flexDirection: 'row',
     flex: 1,
   },
-  bottomNavText: {
-    color: 'white',
-    fontSize: 14,
+  messageSenderAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    marginRight: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
-  bottomNavIcons: {
-    flexDirection: 'row',
+  messageContent: {
+    flex: 1,
+  },
+  senderName: {
+    fontSize: 13,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  messageBubble: {
+    paddingHorizontal: 0,
+    paddingVertical: 0,
+    maxWidth: '85%',
+  },
+  tempMessage: {
+    opacity: 0.7,
+  },
+  messageText: {
+    color: '#fff',
+    fontSize: 15,
+    lineHeight: 20,
+  },
+  messageTime: {
+    color: '#888',
+    fontSize: 11,
+    marginTop: 6,
+  },
+  sendingIndicator: {
+    color: '#4A90E2',
+    fontStyle: 'italic',
+  },
+  systemMessage: {
     alignItems: 'center',
-    marginHorizontal: 16,
+    marginBottom: 12,
   },
-  bottomNavIcon: {
-    marginHorizontal: 12,
+  systemMessageText: {
+    color: '#888',
+    fontSize: 12,
+    fontStyle: 'italic',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    textAlign: 'center',
   },
-  joinButton: {
-    backgroundColor: '#EC4899',
-    paddingHorizontal: 20,
-    paddingVertical: 8,
+  inputContainer: {
+    backgroundColor: 'rgba(0,0,0,0.95)',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.1)',
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderRadius: 24,
+    paddingHorizontal: 4,
+    paddingVertical: 4,
+  },
+  messageInput: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    color: '#fff',
+    fontSize: 15,
+    maxHeight: 100,
+    textAlignVertical: 'center',
+  },
+  sendButton: {
+    width: 40,
+    height: 40,
     borderRadius: 20,
-  },
-  joinButtonText: {
-    color: 'white',
-    fontSize: 14,
-    fontWeight: 'bold',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 8,
   },
 });
 
-export default ChatRoom;
+export default LiveChatRoom;

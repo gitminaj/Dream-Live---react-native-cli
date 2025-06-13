@@ -21,10 +21,12 @@ import {UserContext} from '../utils/context/user-context';
 
 import {BACKEND_URL, BASE_URL} from '../utils/constant';
 import axios from 'axios';
-import { getDataFromStore } from '../store';
+import {getDataFromStore} from '../store';
+
+import {socket} from '../utils/socket';
 
 export default function Home() {
-  const [feedData, setFeedData] = useState([])
+  const [feedData, setFeedData] = useState([]);
   const {user} = useContext(UserContext);
   console.log('user home', user);
   const navigation = useNavigation();
@@ -102,16 +104,16 @@ export default function Home() {
 
   // fetch chat rooms
   useEffect(() => {
-    const getChatRooms = async () =>{
-      const token = await getDataFromStore('token')
+    const getChatRooms = async () => {
+      const token = await getDataFromStore('token');
       const res = await axios.get(`${BASE_URL}/chat/groupChatRooms`, {
-        headers:{
-          Authorization: `Bearer ${token}`
-        }
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
       console.log('resp cahtrooms', res?.data?.data);
       setFeedData(res?.data?.data);
-    }
+    };
     getChatRooms();
   }, []);
 
@@ -221,11 +223,13 @@ export default function Home() {
     Animated.parallel(animations).start();
   };
 
-  // Calculate rotation interpolation for diamond
-  // const spin = diamondRotate.interpolate({
-  //   inputRange: [0, 1],
-  //   outputRange: ['0deg', '360deg']
-  // });
+   const handleJoinRoom = async (chatRoomId, chatRoom) => {
+    // Join room via socket
+    socket.emit('joinGroupChatRoom', { chatRoomId });
+
+    // Navigate to ChatRoomScreen
+    navigation.navigate('ChatRoom', { chatRoomId, chatRoom, userId: user._id });
+  };
 
   return (
     <>
@@ -379,9 +383,11 @@ export default function Home() {
             <View style={styles.filterBtn}>
               <Text style={styles.filterBtnText}>Love💖</Text>
             </View>
-            <View style={styles.filterBtn}>
+            <TouchableOpacity
+              onPress={() => navigation.navigate('CreateChatRoom')}
+              style={styles.filterBtn}>
               <Text style={styles.filterBtnText}>Chatroom</Text>
-            </View>
+            </TouchableOpacity>
             <View style={styles.filterBtn}>
               <Text style={styles.filterBtnText}>🔥New</Text>
             </View>
@@ -391,42 +397,44 @@ export default function Home() {
           </Animated.View>
 
           <View style={styles.mainFeedContainer}>
-            {feedData?.map((feed, index) => { 
-              
-              const image = `${BACKEND_URL}/${feed?.admin?.profile?.replace(/\\/g, '/')}`
-              return(
-              <Animated.View
-                key={index}
-                style={{
-                  transform: [{translateY: feedAnimations[index]}],
-                  opacity: feedOpacity[index],
-                  width: '48%',
-                  marginBottom: 10,
-                }}>
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  onPress={() => {
-                    // Create a press animation effect
-                    Animated.sequence([
-                      Animated.timing(feedAnimations[index], {
-                        toValue: -5,
-                        duration: 100,
-                        useNativeDriver: true,
-                      }),
-                      Animated.timing(feedAnimations[index], {
-                        toValue: 0,
-                        duration: 100,
-                        useNativeDriver: true,
-                      }),
-                    ]).start();
-
-                    navigation.navigate('CreateChatRoom');
+            {feedData?.map((feed, index) => {
+              const image = `${BACKEND_URL}/${feed?.picture?.replace(
+                /\\/g,
+                '/',
+              )}`;
+              return (
+                <Animated.View
+                  key={index}
+                  style={{
+                    transform: [{translateY: feedAnimations[index]}],
+                    opacity: feedOpacity[index],
+                    width: '48%',
+                    marginBottom: 10,
                   }}>
-                  <SingleFeed name={feed.name} image={image} />
-                </TouchableOpacity>
-              </Animated.View>
-            )}
-            )}
+                  <TouchableOpacity
+                    activeOpacity={0.8}
+                    onPress={() => {
+                      // Create a press animation effect
+                      Animated.sequence([
+                        Animated.timing(feedAnimations[index], {
+                          toValue: -5,
+                          duration: 100,
+                          useNativeDriver: true,
+                        }),
+                        Animated.timing(feedAnimations[index], {
+                          toValue: 0,
+                          duration: 100,
+                          useNativeDriver: true,
+                        }),
+                      ]).start();
+
+                      handleJoinRoom(feed._id, feed)
+                    }}>
+                    <SingleFeed name={feed.name} image={image} />
+                  </TouchableOpacity>
+                </Animated.View>
+              );
+            })}
           </View>
         </ScrollView>
       </View>

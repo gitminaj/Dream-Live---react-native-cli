@@ -11,19 +11,24 @@ import {
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import Feather from 'react-native-vector-icons/Feather';
+import { BACKEND_URL } from '../utils/constant';
 
-const LiveAudioRoom = () => {
+const LiveAudioRoom = ({navigation, route}) => {
+  const { chatRoomId, chatRoom} = route.params;
+  console.log('char room', chatRoomId, chatRoom)
   return (
     <View style={styles.container}>
       {/* Top Bar */}
       <View style={styles.topBar}>
         <View style={styles.hostInfo}>
           <Image
-            source={require('../assets/homeFeed/emmily.png')}
+            source={{
+                        uri: `${BACKEND_URL}/${chatRoom?.picture.replace(/\\/g, '/')}`,
+                      }}
             style={styles.avatar}
           />
           <View>
-            <Text style={styles.hostName}>Emilly Watson</Text>
+            <Text style={styles.hostName}>{chatRoom?.name}</Text>
             <TouchableOpacity style={styles.followBtn}>
               <Text style={styles.followText}>+ Follow</Text>
             </TouchableOpacity>
@@ -146,11 +151,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginVertical: 10,
     backgroundColor: '#434343',
-    borderRadius: 50
+    borderRadius: 50,
   },
   waitingAvatar: {width: 40, height: 40, borderRadius: 30},
   heart: {fontSize: 15, color: 'red', marginHorizontal: 5},
-  waitingText: {color: '#ccc', alignSelf: 'center', marginTop: 10, marginBottom: 400},
+  waitingText: {
+    color: '#ccc',
+    alignSelf: 'center',
+    marginTop: 10,
+    marginBottom: 400,
+  },
   chatContainer: {flex: 1, marginVertical: 10},
   chatMsg: {color: '#fff', marginVertical: 2},
   chatName: {color: '#5a4fff', fontWeight: 'bold'},
