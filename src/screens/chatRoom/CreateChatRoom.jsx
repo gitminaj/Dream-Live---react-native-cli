@@ -1,5 +1,5 @@
 // CreateRoomScreen.js
-import React, {useState} from 'react';
+import React, {useContext, useState} from 'react';
 import {
   View,
   Text,
@@ -17,8 +17,11 @@ import {BASE_URL} from '../../utils/constant';
 import {getDataFromStore} from '../../store';
 
 import * as Burnt from 'burnt';
+import { UserContext } from '../../utils/context/user-context';
 
 const CreateRoomScreen = ({navigation}) => {
+  const { user } = useContext(UserContext);
+  const userId = user._id;
   const [selectedImage, setSelectedImage] = useState(null);
   const [showDropdown, setShowDropdown] = useState(false);
   const [selectedParticipants, setSelectedParticipants] = useState('7');
@@ -97,7 +100,8 @@ const CreateRoomScreen = ({navigation}) => {
           title: 'Room created Successfully!',
           preset: 'done',
         });
-        navigation.replace('ChatRoom',{ ChatRoomId: response?.data?.chatRoom?._id, chatRoom: response?.data?.chatRoom  });
+        const chatRoomId = response?.data?.chatRoom?._id;
+        navigation.replace('ChatRoom',{ chatRoomId , chatRoom: response?.data?.chatRoom, userId  });
       }
     } catch (err) {
       console.log('error', err);

@@ -17,33 +17,8 @@ import {BACKEND_URL, BASE_URL} from '../utils/constant';
 import {UserContext} from '../utils/context/user-context';
 import {getDataFromStore} from '../store';
 
-// Sample data for chat list
-const CHATS = [
-  {
-    id: '1',
-    name: 'Jhon Doe',
-    avatar: require('../assets/homeFeed/jhon.png'), // You'll need to add this image to your assets
-    status: 'New Chat',
-    lastMessage: '',
-    time: '',
-  },
-  {
-    id: '2',
-    name: 'Jhon Doe',
-    avatar: require('../assets/homeFeed/jhon.png'),
-    status: 'New Chat',
-    lastMessage: '',
-    time: '',
-  },
-  {
-    id: '3',
-    name: 'Jhon Doe',
-    avatar: require('../assets/homeFeed/jhon.png'),
-    status: 'New Chat',
-    lastMessage: '',
-    time: '',
-  },
-];
+
+
 
 const MessageList = () => {
   const {user} = useContext(UserContext);

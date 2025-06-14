@@ -24,45 +24,28 @@ import axios from 'axios';
 import {getDataFromStore} from '../store';
 
 import {socket} from '../utils/socket';
+import FloatingPlusButton from '../components/home/FloatingPlusButton';
 
 export default function Home() {
+  const [feedAnimations, setFeedAnimations] = useState([]);
+  const [feedOpacity, setFeedOpacity] = useState([]);
   const [feedData, setFeedData] = useState([]);
   const {user} = useContext(UserContext);
   console.log('user home', user);
   const navigation = useNavigation();
+
   // Animation values
   const blueBoxAnim = useRef(new Animated.Value(-200)).current;
   const redBoxAnim = useRef(new Animated.Value(200)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
-  const headerAnim = useRef(new Animated.Value(-50)).current; // For header slide-in from top
+  const headerAnim = useRef(new Animated.Value(-50)).current;
 
   // Diamond animations
   const diamondScale = useRef(new Animated.Value(1)).current;
-  // const diamondRotate = useRef(new Animated.Value(0)).current;
   const diamondOpacity = useRef(new Animated.Value(1)).current;
 
-  // Feed item animations - corrected reference method
-  const feedAnimations = useRef(
-    [...Array(8)].map(() => new Animated.Value(100)),
-  ).current;
-  const feedOpacity = useRef(
-    [...Array(8)].map(() => new Animated.Value(0)),
-  ).current;
-
-  // Sample feed data
-  // const feedData = [
-  //   {name: 'Emilly Watson', image: require('../assets/homeFeed/emmily.png')},
-  //   {name: 'Jhon Watson', image: require('../assets/homeFeed/jhon.png')},
-  //   {name: 'Jhon Watson', image: require('../assets/homeFeed/jhon.png')},
-  //   {name: 'Emilly Watson', image: require('../assets/homeFeed/emmily.png')},
-  //   {name: 'Emilly Watson', image: require('../assets/homeFeed/emmily.png')},
-  //   {name: 'Jhon Watson', image: require('../assets/homeFeed/jhon.png')},
-  //   {name: 'Jhon Watson', image: require('../assets/homeFeed/jhon.png')},
-  //   {name: 'Emilly Watson', image: require('../assets/homeFeed/emmily.png')},
-  // ];
-
-  // Start animations when component mounts
+  // Start main animations when component mounts
   useEffect(() => {
     // Slide in animations
     Animated.parallel([
@@ -95,24 +78,41 @@ export default function Home() {
     // Start pulse animation loop
     startPulseAnimation();
 
-    // Start feed card animations with staggered delay
-    startFeedAnimations();
-
     // Start diamond animation
     startDiamondAnimation();
   }, []);
 
+  // Handle feed data changes and setup animations
+  useEffect(() => {
+    if (Array.isArray(feedData) && feedData.length > 0) {
+      const animations = feedData.map(() => new Animated.Value(100));
+      const opacities = feedData.map(() => new Animated.Value(0));
+      setFeedAnimations(animations);
+      setFeedOpacity(opacities);
+
+      // Start feed animations after a small delay to ensure state is updated
+      setTimeout(() => {
+        startFeedAnimations(animations, opacities);
+      }, 100);
+    }
+  }, [feedData]);
+
   // fetch chat rooms
   useEffect(() => {
     const getChatRooms = async () => {
-      const token = await getDataFromStore('token');
-      const res = await axios.get(`${BASE_URL}/chat/groupChatRooms`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      console.log('resp cahtrooms', res?.data?.data);
-      setFeedData(res?.data?.data);
+      try {
+        const token = await getDataFromStore('token');
+        const res = await axios.get(`${BASE_URL}/chat/groupChatRooms`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        console.log('resp chatrooms', res?.data?.data);
+        setFeedData(res?.data?.data || []); // Ensure it's always an array
+      } catch (error) {
+        console.log('Error fetching chat rooms:', error);
+        setFeedData([]); // Set empty array on error
+      }
     };
     getChatRooms();
   }, []);
@@ -137,9 +137,8 @@ export default function Home() {
     ).start();
   };
 
-  // Diamond animation function - combined scale, rotation and opacity
+  // Diamond animation function
   const startDiamondAnimation = () => {
-    // Create a combined animation sequence
     Animated.loop(
       Animated.parallel([
         // Scale animation
@@ -163,9 +162,6 @@ export default function Home() {
             useNativeDriver: true,
           }),
         ]),
-
-        // Rotation animation
-        //
 
         // Glittering effect with opacity
         Animated.sequence([
@@ -193,37 +189,41 @@ export default function Home() {
             easing: Easing.bezier(0.4, 0, 0.2, 1),
             useNativeDriver: true,
           }),
-          Animated.delay(2400), // Wait for the rest of the animation cycle
+          Animated.delay(2400),
         ]),
       ]),
     ).start();
   };
 
   // Staggered animation for feed cards
-  const startFeedAnimations = () => {
-    // Create animation sequence for each feed item with staggered delay
-    const animations = feedAnimations.map((animation, index) => {
-      return Animated.parallel([
-        Animated.timing(animation, {
+  const startFeedAnimations = (animations, opacities) => {
+    if (!animations || !opacities || animations.length === 0) {
+      console.log('No animations to start');
+      return;
+    }
+
+    const animSequence = animations.map((anim, index) =>
+      Animated.parallel([
+        Animated.timing(anim, {
           toValue: 0,
           duration: 800,
-          delay: 1000 + index * 100, // Staggered delay
+          delay: 1000 + index * 100,
           easing: Easing.out(Easing.back(1.2)),
           useNativeDriver: true,
         }),
-        Animated.timing(feedOpacity[index], {
+        Animated.timing(opacities[index], {
           toValue: 1,
           duration: 800,
           delay: 1000 + index * 100,
           useNativeDriver: true,
         }),
-      ]);
-    });
-
-    Animated.parallel(animations).start();
+      ])
+    );
+    
+    Animated.parallel(animSequence).start();
   };
 
-   const handleJoinRoom = async (chatRoomId, chatRoom) => {
+  const handleJoinRoom = async (chatRoomId, chatRoom) => {
     // Join room via socket
     socket.emit('joinGroupChatRoom', { chatRoomId });
 
@@ -239,7 +239,7 @@ export default function Home() {
           vertical={true}
           showsHorizontalScrollIndicator={false}
           showsVerticalScrollIndicator={false}>
-          {/* Wrap header in Animated.View for slide-in from top animation */}
+          {/* Header */}
           <Animated.View
             style={[
               styles.headerContainer,
@@ -252,10 +252,7 @@ export default function Home() {
             {/* Diamond with multiple animations */}
             <Animated.View
               style={{
-                transform: [
-                  {scale: diamondScale},
-                  // { rotate: spin }
-                ],
+                transform: [{scale: diamondScale}],
                 opacity: diamondOpacity,
               }}>
               <Image
@@ -298,9 +295,9 @@ export default function Home() {
             </TouchableOpacity>
           </Animated.View>
 
+          {/* Call Container */}
           <View style={styles.callContainer}>
-            {/* blue box joincall with animation */}
-
+            {/* Blue box join call */}
             <Animated.View
               style={{
                 width: '45%',
@@ -335,7 +332,7 @@ export default function Home() {
               </TouchableOpacity>
             </Animated.View>
 
-            {/* red box play game with animation */}
+            {/* Red box play game */}
             <Animated.View
               style={{
                 width: '45%',
@@ -396,18 +393,24 @@ export default function Home() {
             </View>
           </Animated.View>
 
+          {/* Feed Container */}
           <View style={styles.mainFeedContainer}>
             {feedData?.map((feed, index) => {
               const image = `${BACKEND_URL}/${feed?.picture?.replace(
                 /\\/g,
                 '/',
               )}`;
+              
+              // Check if animations exist for this index
+              const translateY = feedAnimations[index] || new Animated.Value(0);
+              const opacity = feedOpacity[index] || new Animated.Value(1);
+              
               return (
                 <Animated.View
-                  key={index}
+                  key={feed._id || index} // Use unique key
                   style={{
-                    transform: [{translateY: feedAnimations[index]}],
-                    opacity: feedOpacity[index],
+                    transform: [{translateY}],
+                    opacity,
                     width: '48%',
                     marginBottom: 10,
                   }}>
@@ -415,20 +418,22 @@ export default function Home() {
                     activeOpacity={0.8}
                     onPress={() => {
                       // Create a press animation effect
-                      Animated.sequence([
-                        Animated.timing(feedAnimations[index], {
-                          toValue: -5,
-                          duration: 100,
-                          useNativeDriver: true,
-                        }),
-                        Animated.timing(feedAnimations[index], {
-                          toValue: 0,
-                          duration: 100,
-                          useNativeDriver: true,
-                        }),
-                      ]).start();
+                      if (feedAnimations[index]) {
+                        Animated.sequence([
+                          Animated.timing(feedAnimations[index], {
+                            toValue: -5,
+                            duration: 100,
+                            useNativeDriver: true,
+                          }),
+                          Animated.timing(feedAnimations[index], {
+                            toValue: 0,
+                            duration: 100,
+                            useNativeDriver: true,
+                          }),
+                        ]).start();
+                      }
 
-                      handleJoinRoom(feed._id, feed)
+                      handleJoinRoom(feed._id, feed);
                     }}>
                     <SingleFeed name={feed.name} image={image} />
                   </TouchableOpacity>
@@ -438,6 +443,9 @@ export default function Home() {
           </View>
         </ScrollView>
       </View>
+      <FloatingPlusButton 
+        onPress={() => navigation.navigate('CreateChatRoom')} 
+      />
       <HomeFooter />
     </>
   );
@@ -573,5 +581,5 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     flexDirection: 'row',
     marginTop: 10,
-  },
+  }
 });

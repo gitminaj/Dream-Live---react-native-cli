@@ -11,62 +11,133 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  Keyboard,
+  BackHandler,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import Feather from 'react-native-vector-icons/Feather';
-import io from 'socket.io-client';
+import { socket } from '../../utils/socket';
 import { BACKEND_URL, BASE_URL } from '../../utils/constant';
 import { getDataFromStore } from '../../store';
 import axios from 'axios';
 import { UserContext } from '../../utils/context/user-context';
 
 const LiveChatRoom = ({ navigation, route }) => {
-  const { chatRoomId, chatRoom } = route.params;
+  const { chatRoomId, chatRoom, userId } = route.params;
   const { user } = useContext(UserContext);
-  const userId = user._id;
+  // const userId = user._id;
   const [messages, setMessages] = useState([]);
   const [messageText, setMessageText] = useState('');
   const [onlineParticipants, setOnlineParticipants] = useState(chatRoom?.participants || []);
-  const [socket, setSocket] = useState(null);
-  const [isConnected, setIsConnected] = useState(false);
+  const [isConnected, setIsConnected] = useState(socket?.connected || false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const messagesRef = useRef(null);
 
-  useEffect(() => {
-    // Initialize socket connection
-    const socketInstance = io(BACKEND_URL, {
-      transports: ['websocket'],
-      reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
-    });
+  console.log('chr', chatRoomId, chatRoom, userId )
 
-    setSocket(socketInstance);
+  // Function to handle leaving room with confirmation
+  const handleLeaveRoom = () => {
+    Alert.alert(
+      "Leave Chat Room",
+      "Are you sure you want to leave this chat room?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel"
+        },
+        {
+          text: "Leave",
+          style: "destructive",
+          onPress: () => {
+            if (socket) {
+              socket.emit('leaveRoom', { chatRoomId });
+            }
+            navigation.goBack();
+          }
+        }
+      ]
+    );
+  };
+
+  // Handle Android back button
+  useEffect(() => {
+    const backAction = () => {
+      handleLeaveRoom();
+      return true; // Prevent default back action
+    };
+
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      backAction
+    );
+
+    return () => backHandler.remove();
+  }, []);
+
+  // Add keyboard listeners
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      'keyboardDidShow',
+      (e) => {
+        setKeyboardHeight(e.endCoordinates.height);
+      }
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      'keyboardDidHide',
+      () => {
+        setKeyboardHeight(0);
+      }
+    );
+
+    return () => {
+      keyboardDidHideListener?.remove();
+      keyboardDidShowListener?.remove();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!socket) {
+      Alert.alert('Error', 'Socket connection not available');
+      return;
+    }
+
+    // Check if already connected
+    if (socket.connected) {
+      setIsConnected(true);
+      // Authenticate user
+      socket.emit('authenticate', { userId });
+    }
 
     // Socket event listeners
-    socketInstance.on('connect', () => {
+    const handleConnect = () => {
       console.log('Connected to socket server');
       setIsConnected(true);
-      
       // Authenticate user
-      socketInstance.emit('authenticate', { userId });
-    });
+      socket.emit('authenticate', { userId });
+    };
 
-    socketInstance.on('authenticated', (data) => {
+    const handleAuthenticated = (data) => {
       if (data.success) {
         // Join the group chat room
-        socketInstance.emit('joinGroupChatRoom', { chatRoomId });
+        socket.emit('joinGroupChatRoom', { chatRoomId });
       }
-    });
+    };
 
-    socketInstance.on('joinedRoom', (data) => {
+    const handleJoinedRoom = (data) => {
       console.log('Joined room:', data.chatRoomId);
       loadMessages();
       // Refresh chatroom data to get updated participants
       refreshChatRoom();
-    });
+    };
 
-    socketInstance.on('newMessage', (message) => {
+    const handleRoomDeleted = ({ chatRoomId }) => {
+      // Show alert or navigate away
+      Alert.alert("Room Deleted", "The admin has deleted the chat room.");
+      navigation.goBack(); // or navigate to room list
+    };
+
+    const handleNewMessage = (message) => {
       // Remove any temporary message with the same tempId or content from same user
       setMessages(prev => {
         const filteredMessages = prev.filter(msg => {
@@ -99,9 +170,9 @@ const LiveChatRoom = ({ navigation, route }) => {
         return filteredMessages;
       });
       scrollToBottom();
-    });
+    };
 
-    socketInstance.on('userJoinedRoom', (data) => {
+    const handleUserJoinedRoom = (data) => {
       console.log('User joined room:', data);
       
       // Refresh chatroom data to get updated participants list
@@ -115,9 +186,9 @@ const LiveChatRoom = ({ navigation, route }) => {
         createdAt: new Date().toISOString(),
       };
       setMessages(prev => [...prev, joinMessage]);
-    });
+    };
 
-    socketInstance.on('userLeftRoom', (data) => {
+    const handleUserLeftRoom = (data) => {
       console.log('User left room:', data);
       
       // Refresh chatroom data to get updated participants list
@@ -131,42 +202,69 @@ const LiveChatRoom = ({ navigation, route }) => {
         createdAt: new Date().toISOString(),
       };
       setMessages(prev => [...prev, leaveMessage]);
-    });
+    };
 
-    socketInstance.on('userOnline', (data) => {
+    const handleUserOnline = (data) => {
       console.log('User online:', data);
       // Refresh chatroom data to get latest participant status
       refreshChatRoom();
-    });
+    };
 
-    socketInstance.on('userOffline', (data) => {
+    const handleUserOffline = (data) => {
       console.log('User offline:', data);
       // Refresh chatroom data to get latest participant status
       refreshChatRoom();
-    });
+    };
 
-    // Handle updated participants list from server (optional - keep as fallback)
-    socketInstance.on('participantsUpdated', (data) => {
+    const handleParticipantsUpdated = (data) => {
       console.log('Participants updated via socket:', data);
       if (data.participants) {
         setOnlineParticipants(data.participants);
       }
-    });
+    };
 
-    socketInstance.on('disconnect', () => {
+    const handleDisconnect = () => {
       console.log('Disconnected from socket server');
       setIsConnected(false);
-    });
+    };
 
-    socketInstance.on('error', (error) => {
+    const handleError = (error) => {
       console.error('Socket error:', error);
       Alert.alert('Error', error.message || 'Connection error');
-    });
+    };
+
+    // Add event listeners
+    socket.on('connect', handleConnect);
+    socket.on('authenticated', handleAuthenticated);
+    socket.on('joinedRoom', handleJoinedRoom);
+    socket.on('roomDeleted', handleRoomDeleted);
+    socket.on('newMessage', handleNewMessage);
+    socket.on('userJoinedRoom', handleUserJoinedRoom);
+    socket.on('userLeftRoom', handleUserLeftRoom);
+    socket.on('userOnline', handleUserOnline);
+    socket.on('userOffline', handleUserOffline);
+    socket.on('participantsUpdated', handleParticipantsUpdated);
+    socket.on('disconnect', handleDisconnect);
+    socket.on('error', handleError);
 
     return () => {
-      if (socketInstance) {
-        socketInstance.emit('leaveRoom', { chatRoomId });
-        socketInstance.disconnect();
+      // Remove event listeners
+      socket.off('connect', handleConnect);
+      socket.off('authenticated', handleAuthenticated);
+      socket.off('joinedRoom', handleJoinedRoom);
+      socket.off('roomDeleted', handleRoomDeleted);
+      socket.off('newMessage', handleNewMessage);
+      socket.off('userJoinedRoom', handleUserJoinedRoom);
+      socket.off('userLeftRoom', handleUserLeftRoom);
+      socket.off('userOnline', handleUserOnline);
+      socket.off('userOffline', handleUserOffline);
+      socket.off('participantsUpdated', handleParticipantsUpdated);
+      socket.off('disconnect', handleDisconnect);
+      socket.off('error', handleError);
+      
+      // Leave room when component unmounts
+      if (socket) {
+        socket.emit('leaveRoom', { chatRoomId });
       }
     };
   }, [chatRoomId, userId]);
@@ -209,7 +307,7 @@ const LiveChatRoom = ({ navigation, route }) => {
 
       if (response?.data?.success && response?.data?.chatRoom) {
         setOnlineParticipants(response.data.chatRoom.participants || []);
-        console.log('Updated participants:', response.data.chatRoom.participants);
+        console.log('Updated participants:', response.data.chatRoom.participants?.length);
       }
     } catch (error) {
       console.error('Error refreshing chatroom:', error);
@@ -239,7 +337,9 @@ const LiveChatRoom = ({ navigation, route }) => {
 
     setMessages(prev => [...prev, tempMessage]);
     setMessageText('');
-    scrollToBottom();
+    
+    // Scroll to bottom after sending message
+    setTimeout(() => scrollToBottom(), 50);
 
     // Send via socket
     socket.emit('sendMessage', messageData);
@@ -247,9 +347,7 @@ const LiveChatRoom = ({ navigation, route }) => {
 
   const scrollToBottom = () => {
     if (messagesRef.current) {
-      setTimeout(() => {
-        messagesRef.current.scrollToEnd({ animated: true });
-      }, 100);
+      messagesRef.current.scrollToEnd({ animated: true });
     }
   };
 
@@ -332,11 +430,7 @@ const LiveChatRoom = ({ navigation, route }) => {
   };
 
   return (
-    <KeyboardAvoidingView 
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
-    >
+    <View style={styles.container}>
       {/* Top Bar */}
       <View style={styles.topBar}>
         <View style={styles.hostInfo}>
@@ -361,7 +455,7 @@ const LiveChatRoom = ({ navigation, route }) => {
             <Text style={styles.liveText}>Live</Text>
           </View>
           <TouchableOpacity 
-            onPress={() => navigation.goBack()}
+            onPress={handleLeaveRoom}
             style={styles.closeButton}
           >
             <Feather name="x" size={24} color="#fff" />
@@ -389,52 +483,74 @@ const LiveChatRoom = ({ navigation, route }) => {
         />
       </View>
 
-      {/* Chat Messages */}
-      <FlatList
-        ref={messagesRef}
-        data={messages}
-        renderItem={renderMessage}
-        keyExtractor={(item) => item._id}
-        style={styles.messagesContainer}
-        contentContainerStyle={styles.messagesContent}
-        onContentSizeChange={scrollToBottom}
-        removeClippedSubviews={false}
-        initialNumToRender={20}
-        maxToRenderPerBatch={10}
-        windowSize={10}
-      />
+      {/* Main Content Area */}
+      <KeyboardAvoidingView 
+        style={styles.mainContent}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={0}
+      >
+        {/* Chat Messages */}
+        <FlatList
+          ref={messagesRef}
+          data={messages}
+          renderItem={renderMessage}
+          keyExtractor={(item) => item._id}
+          style={styles.messagesContainer}
+          contentContainerStyle={[
+            styles.messagesContent,
+            { paddingBottom: keyboardHeight > 0 ? 20 : 80 } // Adjust padding based on keyboard
+          ]}
+          onContentSizeChange={() => {
+            setTimeout(() => scrollToBottom(), 100);
+          }}
+          removeClippedSubviews={false}
+          initialNumToRender={20}
+          maxToRenderPerBatch={10}
+          windowSize={10}
+          maintainVisibleContentPosition={{
+            minIndexForVisible: 0,
+            autoscrollToTopThreshold: 10,
+          }}
+        />
 
-      {/* Message Input */}
-      <View style={styles.inputContainer}>
-        <View style={styles.inputWrapper}>
-          <TextInput
-            style={styles.messageInput}
-            value={messageText}
-            onChangeText={setMessageText}
-            placeholder="Type a message..."
-            placeholderTextColor="#888"
-            multiline
-            maxLength={500}
-            returnKeyType="send"
-            onSubmitEditing={sendMessage}
-            blurOnSubmit={false}
-          />
-          <TouchableOpacity 
-            style={[
-              styles.sendButton, 
-              { 
-                opacity: (messageText.trim() && isConnected) ? 1 : 0.5,
-                backgroundColor: (messageText.trim() && isConnected) ? '#4A90E2' : '#666'
-              }
-            ]}
-            onPress={sendMessage}
-            disabled={!messageText.trim() || !isConnected}
-          >
-            <Icon name="send" size={20} color="#fff" />
-          </TouchableOpacity>
+        {/* Message Input - Fixed at bottom */}
+        <View style={[
+          styles.inputContainer,
+          Platform.OS === 'ios' && keyboardHeight > 0 && {
+            paddingBottom: keyboardHeight > 0 ? 0 : 34, // Adjust for safe area
+          }
+        ]}>
+          <View style={styles.inputWrapper}>
+            <TextInput
+              style={styles.messageInput}
+              value={messageText}
+              onChangeText={setMessageText}
+              placeholder="Type a message..."
+              placeholderTextColor="#888"
+              multiline
+              maxLength={500}
+              returnKeyType="send"
+              onSubmitEditing={sendMessage}
+              blurOnSubmit={false}
+              enablesReturnKeyAutomatically={true}
+            />
+            <TouchableOpacity 
+              style={[
+                styles.sendButton, 
+                { 
+                  opacity: (messageText.trim() && isConnected) ? 1 : 0.5,
+                  backgroundColor: (messageText.trim() && isConnected) ? '#4A90E2' : '#666'
+                }
+              ]}
+              onPress={sendMessage}
+              disabled={!messageText.trim() || !isConnected}
+            >
+              <Icon name="send" size={20} color="#fff" />
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </View>
   );
 };
 
@@ -544,6 +660,10 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#0a0a0a',
   }),
+  mainContent: {
+    flex: 1,
+    position: 'relative',
+  },
   messagesContainer: {
     flex: 1,
     backgroundColor: '#0a0a0a',
@@ -551,6 +671,7 @@ const styles = StyleSheet.create({
   messagesContent: {
     paddingHorizontal: 16,
     paddingVertical: 12,
+    flexGrow: 1,
   },
   messageWrapper: {
     marginBottom: 16,
@@ -615,9 +736,14 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   inputContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     backgroundColor: 'rgba(0,0,0,0.95)',
     paddingHorizontal: 16,
     paddingVertical: 12,
+    paddingBottom: Platform.OS === 'ios' ? 34 : 12, // Safe area padding
     borderTopWidth: 1,
     borderTopColor: 'rgba(255,255,255,0.1)',
   },
@@ -636,7 +762,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 15,
     maxHeight: 100,
-    textAlignVertical: 'center',
+    textAlignVertical: 'top',
   },
   sendButton: {
     width: 40,
