@@ -37,7 +37,7 @@ export default function ChatScreen() {
   const flatListRef = useRef();
   const modalAnimation = useRef(new Animated.Value(0)).current;
 
-  // console.log('route params', roomId, receiverUserId, roomDetails);
+  console.log('route params', roomId, receiverUserId, roomDetails);
 
   useEffect(() => {
     const initialReceiver = roomDetails?.data?.participants.find(

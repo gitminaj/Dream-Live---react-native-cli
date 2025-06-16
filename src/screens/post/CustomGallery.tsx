@@ -10,17 +10,17 @@ import {
   Platform,
   SafeAreaView,
   StatusBar,
-  Dimensions
+  Dimensions,
+  Alert,
+  Linking
 } from 'react-native';
 import { CameraRoll } from '@react-native-camera-roll/camera-roll';
 import { ActivityIndicator } from 'react-native';
-
 
 const { width } = Dimensions.get('window');
 const itemSize = (width - 40) / 3;
 
 const requestPermission = async () => {
-
   if (Platform.OS === 'android') {
     // For Android 13+ (API 33+), we need separate permissions for photos and videos
     if (Platform.Version >= 33) {
@@ -57,57 +57,141 @@ const requestPermission = async () => {
   return true;
 };
 
+// Enhanced permission check that returns detailed status
+const checkPermissionStatus = async () => {
+  if (Platform.OS === 'android') {
+    if (Platform.Version >= 33) {
+      const photoPermission = PermissionsAndroid.PERMISSIONS.READ_MEDIA_IMAGES;
+      const videoPermission = PermissionsAndroid.PERMISSIONS.READ_MEDIA_VIDEO;
+      
+      const photoStatus = await PermissionsAndroid.check(photoPermission);
+      const videoStatus = await PermissionsAndroid.check(videoPermission);
+      
+      return {
+        granted: photoStatus && videoStatus,
+        denied: !photoStatus || !videoStatus,
+        neverAskAgain: false // We'll handle this in the request flow
+      };
+    } else {
+      const permission = PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE;
+      const status = await PermissionsAndroid.check(permission);
+      
+      return {
+        granted: status,
+        denied: !status,
+        neverAskAgain: false
+      };
+    }
+  }
+  return { granted: true, denied: false, neverAskAgain: false };
+};
+
 const CustomGallery = ({ navigation }) => {
   const [pageInfo, setPageInfo] = useState({ has_next_page: true, end_cursor: null });
-const [loadingMore, setLoadingMore] = useState(false);
-
+  const [loadingMore, setLoadingMore] = useState(false);
   const [loading, setLoading] = useState(true);
   const [photos, setPhotos] = useState([]);
   const [albums, setAlbums] = useState([]);
   const [selectedTab, setSelectedTab] = useState('Recent');
   const [error, setError] = useState('');
   const [selectedImage, setSelectedImage] = useState(null);
+  const [permissionStatus, setPermissionStatus] = useState(null);
 
-const loadPhotos = async (loadMore = false) => {
-  if (loadingMore || (loadMore && !pageInfo.has_next_page)) return;
+  const loadPhotos = async (loadMore = false) => {
+    if (loadingMore || (loadMore && !pageInfo.has_next_page)) return;
 
-  if (loadMore) setLoadingMore(true);
-  else setLoading(true);
+    if (loadMore) setLoadingMore(true);
+    else setLoading(true);
 
-  try {
-    const granted = await requestPermission();
-    if (!granted) {
-      setError('Permission denied - need access to both photos and videos');
-      return;
+    try {
+      const granted = await requestPermission();
+      if (!granted) {
+        setError('Permission denied - need access to both photos and videos');
+        setPermissionStatus('denied');
+        return;
+      }
+
+      setPermissionStatus('granted');
+      setError('');
+
+      const result = await CameraRoll.getPhotos({
+        first: 15,
+        after: loadMore ? pageInfo.end_cursor : undefined,
+        assetType: 'All',
+        include: ['playableDuration', 'filename', 'fileSize', 'location', 'imageSize', 'orientation'],
+      });
+
+      if (loadMore) {
+        setPhotos(prev => [...prev, ...result.edges]);
+      } else {
+        setPhotos(result.edges);
+      }
+
+      setPageInfo(result.page_info);
+    } catch (err) {
+      console.error('Error loading photos', err);
+      setError(`Error: ${err.message}`);
+    } finally {
+      if (loadMore) setLoadingMore(false);
+      else setLoading(false);
     }
+  };
 
-    const result = await CameraRoll.getPhotos({
-      first: 15,
-      after: loadMore ? pageInfo.end_cursor : undefined,
-      assetType: 'All',
-      include: ['playableDuration', 'filename', 'fileSize', 'location', 'imageSize', 'orientation'],
-    });
+  // Method 1: Simple retry button
+  const handleRetryPermission = async () => {
+    setLoading(true);
+    setError('');
+    await loadPhotos();
+  };
 
-    if (loadMore) {
-      setPhotos(prev => [...prev, ...result.edges]);
+  // Method 2: Alert with options
+  const showPermissionAlert = () => {
+    Alert.alert(
+      "Permission Required",
+      "This app needs access to your photos and videos to display your gallery. Please grant permission to continue.",
+      [
+        {
+          text: "Cancel",
+          style: "cancel"
+        },
+        {
+          text: "Retry",
+          onPress: handleRetryPermission
+        },
+        {
+          text: "Open Settings",
+          onPress: () => Linking.openSettings()
+        }
+      ]
+    );
+  };
+
+  // Method 3: Check if permission was permanently denied
+  const handlePermissionDenied = async () => {
+    const status = await checkPermissionStatus();
+    
+    if (status.neverAskAgain) {
+      Alert.alert(
+        "Permission Required",
+        "Photo access has been permanently denied. Please enable it in your device settings to use this feature.",
+        [
+          {
+            text: "Cancel",
+            style: "cancel"
+          },
+          {
+            text: "Open Settings",
+            onPress: () => Linking.openSettings()
+          }
+        ]
+      );
     } else {
-      setPhotos(result.edges);
+      showPermissionAlert();
     }
-
-    setPageInfo(result.page_info);
-  } catch (err) {
-    console.error('Error loading photos', err);
-    setError(`Error: ${err.message}`);
-  } finally {
-    if (loadMore) setLoadingMore(false);
-    else setLoading(false);
-  }
-};
-
+  };
 
   const selectImage = (item) => {
     setSelectedImage(item.node.image.uri);
-    // Navigate to create post screen with the selected image
     if (navigation && navigation.navigate) {
       navigation.navigate('CreatePost', { 
         media: {
@@ -155,72 +239,69 @@ const loadPhotos = async (loadMore = false) => {
         >
           <Text style={[styles.tabText, selectedTab === 'Recent' && styles.activeTabText]}>Gallery</Text>
         </TouchableOpacity>
-{/*         
-        <TouchableOpacity 
-          onPress={() => setSelectedTab('Albums')} 
-          style={[styles.tab, selectedTab === 'Albums' && styles.activeTab]}
-        >
-          <Text style={[styles.tabText, selectedTab === 'Albums' && styles.activeTabText]}>Albums</Text>
-        </TouchableOpacity> */}
-        
-        {/* <TouchableOpacity style={styles.menuButton}>
-          <Text style={styles.menuDots}>⋯</Text>
-        </TouchableOpacity> */}
       </View>
     </View>
   );
 
-const renderPhotoItem = ({ item, index }) => {
-  // Improved video detection: check both type field and playableDuration
-  const isVideo = (item.node.type && item.node.type.startsWith('video')) || 
-                 (item.node.image.playableDuration && item.node.image.playableDuration > 0);
-  
-  const duration = item.node.image.playableDuration || 0;
-  
-  // console.log(`Item ${index}: ${item.node.image.uri} - isVideo:`, isVideo, 
-  //   `type:${item.node.type}, duration:${duration}`);
-  
-  return (
-    <TouchableOpacity 
-      style={styles.imageContainer}
-      onPress={() => selectImage(item)}
-    >
-      <Image
-        source={{ uri: item.node.image.uri }}
-        style={styles.image}
-      />
-      {isVideo && (
-        <View style={styles.videoDurationContainer}>
-          <Text style={styles.videoDuration}>
-            {formatDuration(duration)}
-          </Text>
-        </View>
-      )}
-      <View style={styles.checkboxContainer}>
-        <View style={[
-          styles.checkbox,
-          selectedImage === item.node.image.uri && styles.checkboxSelected
-        ]}>
-          {selectedImage === item.node.image.uri && (
-            <Text style={styles.checkmark}>✓</Text>
-          )}
-        </View>
-      </View>
-    </TouchableOpacity>
+  // Permission denied UI component
+  const renderPermissionDenied = () => (
+    <View style={styles.permissionContainer}>
+      <Text style={styles.permissionTitle}>Permission Required</Text>
+      <Text style={styles.permissionText}>
+        This app needs access to your photos and videos to display your gallery.
+      </Text>
+      
+      <TouchableOpacity 
+        style={styles.retryButton}
+        onPress={handleRetryPermission}
+      >
+        <Text style={styles.retryButtonText}>Grant Permission</Text>
+      </TouchableOpacity>
+      
+      <TouchableOpacity 
+        style={styles.settingsButton}
+        onPress={() => Linking.openSettings()}
+      >
+        <Text style={styles.settingsButtonText}>Open Settings</Text>
+      </TouchableOpacity>
+    </View>
   );
-};
 
-  const renderAlbumItem = ({ item }) => (
-    <TouchableOpacity style={styles.albumContainer}>
-      {item.thumbnail ? (
-        <Image source={{ uri: item.thumbnail }} style={styles.albumThumbnail} />
-      ) : (
-        <View style={[styles.albumThumbnail, { backgroundColor: '#ccc' }]} />
-      )}
-      <Text style={styles.albumTitle} numberOfLines={1}>{item.title}</Text>
-      <Text style={styles.albumCount}>{item.count}</Text>
-    </TouchableOpacity>
-  );
+  const renderPhotoItem = ({ item, index }) => {
+    const isVideo = (item.node.type && item.node.type.startsWith('video')) || 
+                   (item.node.image.playableDuration && item.node.image.playableDuration > 0);
+    
+    const duration = item.node.image.playableDuration || 0;
+    
+    return (
+      <TouchableOpacity 
+        style={styles.imageContainer}
+        onPress={() => selectImage(item)}
+      >
+        <Image
+          source={{ uri: item.node.image.uri }}
+          style={styles.image}
+        />
+        {isVideo && (
+          <View style={styles.videoDurationContainer}>
+            <Text style={styles.videoDuration}>
+              {formatDuration(duration)}
+            </Text>
+          </View>
+        )}
+        <View style={styles.checkboxContainer}>
+          <View style={[
+            styles.checkbox,
+            selectedImage === item.node.image.uri && styles.checkboxSelected
+          ]}>
+            {selectedImage === item.node.image.uri && (
+              <Text style={styles.checkmark}>✓</Text>
+            )}
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   const formatDuration = (seconds) => {
     const minutes = Math.floor(seconds / 60);
@@ -239,39 +320,42 @@ const renderPhotoItem = ({ item, index }) => {
       <StatusBar barStyle="dark-content" />
       {renderHeader()}
       
-      {error ? <Text style={styles.errorText}>{error}</Text> : null}
-      
-      {loading ? (
-  <View style={styles.loaderContainer}>
-    <ActivityIndicator size="large" color="#D4ACFB" />
-  </View>
-) : selectedTab === 'Recent' ? (
-  <>
-    {renderSectionHeader('Recent')}
-    <FlatList
-      data={photos}
-      keyExtractor={(item, index) => index.toString()}
-      numColumns={3}
-      renderItem={renderPhotoItem}
-      contentContainerStyle={styles.photoGrid}
-      onEndReachedThreshold={0.5}
-  onEndReached={() => loadPhotos(true)}
-  ListFooterComponent={
-    loadingMore ? (
-      <ActivityIndicator size="small" color="#D4ACFB" style={{ margin: 10 }} />
-    ) : null
-  }
-    />
-  </>
-) : (
-  <FlatList
-    data={albums}
-    keyExtractor={(item, index) => index.toString()}
-    renderItem={renderAlbumItem}
-    contentContainerStyle={styles.albumList}
-  />
-)}
-
+      {/* Show permission denied UI if permission is denied */}
+      {permissionStatus === 'denied' ? (
+        renderPermissionDenied()
+      ) : error ? (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity 
+            style={styles.retryButton}
+            onPress={handleRetryPermission}
+          >
+            <Text style={styles.retryButtonText}>Try Again</Text>
+          </TouchableOpacity>
+        </View>
+      ) : loading ? (
+        <View style={styles.loaderContainer}>
+          <ActivityIndicator size="large" color="#D4ACFB" />
+        </View>
+      ) : (
+        <>
+          {renderSectionHeader('Recent')}
+          <FlatList
+            data={photos}
+            keyExtractor={(item, index) => index.toString()}
+            numColumns={3}
+            renderItem={renderPhotoItem}
+            contentContainerStyle={styles.photoGrid}
+            onEndReachedThreshold={0.5}
+            onEndReached={() => loadPhotos(true)}
+            ListFooterComponent={
+              loadingMore ? (
+                <ActivityIndicator size="small" color="#D4ACFB" style={{ margin: 10 }} />
+              ) : null
+            }
+          />
+        </>
+      )}
     </SafeAreaView>
   );
 };
@@ -309,7 +393,6 @@ const styles = StyleSheet.create({
   },
   activeTab: {
     backgroundColor: '#D4ACFB',
-
   },
   tabText: {
     color: '#ccc',
@@ -318,19 +401,63 @@ const styles = StyleSheet.create({
   activeTabText: {
     color: '#000',
   },
-  menuButton: {
-    marginLeft: 'auto',
-    padding: 8,
+  // Permission denied styles
+  permissionContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
   },
-  menuDots: {
-    color: '#fff',
-    fontSize: 20,
+  permissionTitle: {
+    fontSize: 24,
     fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  permissionText: {
+    fontSize: 16,
+    color: '#ccc',
+    textAlign: 'center',
+    marginBottom: 30,
+    lineHeight: 22,
+  },
+  retryButton: {
+    backgroundColor: '#D4ACFB',
+    paddingHorizontal: 30,
+    paddingVertical: 12,
+    borderRadius: 25,
+    marginBottom: 15,
+  },
+  retryButtonText: {
+    color: '#000',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  settingsButton: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: '#D4ACFB',
+    paddingHorizontal: 30,
+    paddingVertical: 12,
+    borderRadius: 25,
+  },
+  settingsButtonText: {
+    color: '#D4ACFB',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
   },
   errorText: {
     color: 'red',
     textAlign: 'center',
     margin: 10,
+    fontSize: 16,
   },
   photoGrid: {
     padding: 5,
@@ -392,32 +519,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
   },
-  albumList: {
-    padding: 10,
-  },
-  albumContainer: {
-    marginBottom: 15,
-  },
-  albumThumbnail: {
-    width: '100%',
-    height: 150,
-    borderRadius: 8,
-  },
-  albumTitle: {
-    color: '#fff',
-    fontSize: 16,
-    marginTop: 5,
-  },
-  albumCount: {
-    color: '#ccc',
-    fontSize: 14,
-  },
   loaderContainer: {
-  flex: 1,
-  justifyContent: 'center',
-  alignItems: 'center',
-},
-
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
 });
 
 export default CustomGallery;

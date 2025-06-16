@@ -9,6 +9,9 @@ import {
   SafeAreaView,
   Image,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import {launchImageLibrary} from 'react-native-image-picker';
@@ -110,96 +113,111 @@ const CreateRoomScreen = ({navigation}) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Icon name="arrow-back" size={24} color="#fff" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Create Room</Text>
-      </View>
-
-      {/* Form */}
-      <View style={styles.form}>
-        {/* Room Picture */}
-        <Text style={styles.label}>Room Picture</Text>
-        <TouchableOpacity style={styles.imageSelector} onPress={selectImage}>
-          {selectedImage ? (
-            <Image
-              source={{uri: selectedImage.uri}}
-              style={styles.selectedImage}
-            />
-          ) : (
-            <View style={styles.imagePlaceholder}>
-              <Icon name="camera" size={32} color="#ccc" />
-              <Text style={styles.imagePlaceholderText}>Select Picture</Text>
-            </View>
-          )}
-        </TouchableOpacity>
-
-        <Text style={styles.label}>Room Name</Text>
-        <TextInput
-          placeholder="Please Enter Name..."
-          placeholderTextColor="#ccc"
-          style={styles.input}
-          onChangeText={name => handleChange('name', name)}
-        />
-
-        <Text style={styles.label}>Room Description</Text>
-        <TextInput
-          placeholder="Please enter description"
-          placeholderTextColor="#ccc"
-          style={[styles.input, {height: 80}]}
-          multiline
-          numberOfLines={5}
-          textAlignVertical="top"
-          onChangeText={des => handleChange('description', des)}
-        />
-
-        <Text style={styles.label}>Room Participants Limit</Text>
-        <View style={styles.dropdownContainer}>
-          <TouchableOpacity
-            style={styles.selector}
-            onPress={() => setShowDropdown(!showDropdown)}>
-            <Text style={styles.selectorText}>
-              {selectedParticipants} participants
-            </Text>
-            <Icon
-              name={showDropdown ? 'chevron-up' : 'chevron-down'}
-              size={20}
-              color="#fff"
-            />
+      <KeyboardAvoidingView 
+        style={styles.keyboardAvoidingView}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+      >
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Icon name="arrow-back" size={24} color="#fff" />
           </TouchableOpacity>
-
-          {showDropdown && (
-            <View style={styles.dropdown}>
-              {participantOptions.map(option => (
-                <TouchableOpacity
-                  key={option}
-                  style={[
-                    styles.dropdownItem,
-                    selectedParticipants === option &&
-                      styles.selectedDropdownItem,
-                  ]}
-                  onPress={() => selectParticipants(option)}>
-                  <Text
-                    style={[
-                      styles.dropdownItemText,
-                      selectedParticipants === option &&
-                        styles.selectedDropdownItemText,
-                    ]}>
-                    {option} participants
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
+          <Text style={styles.headerTitle}>Create Room</Text>
         </View>
-      </View>
 
-      {/* Create Button */}
-      <TouchableOpacity style={styles.nextButton} onPress={handleSubmit}>
-        <Text style={styles.nextButtonText}>Create Room</Text>
-      </TouchableOpacity>
+        {/* Scrollable Form */}
+        <ScrollView 
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.form}>
+            {/* Room Picture */}
+            <Text style={styles.label}>Room Picture</Text>
+            <TouchableOpacity style={styles.imageSelector} onPress={selectImage}>
+              {selectedImage ? (
+                <Image
+                  source={{uri: selectedImage.uri}}
+                  style={styles.selectedImage}
+                />
+              ) : (
+                <View style={styles.imagePlaceholder}>
+                  <Icon name="camera" size={32} color="#ccc" />
+                  <Text style={styles.imagePlaceholderText}>Select Picture</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+
+            <Text style={styles.label}>Room Name</Text>
+            <TextInput
+              placeholder="Please Enter Name..."
+              placeholderTextColor="#ccc"
+              style={styles.input}
+              onChangeText={name => handleChange('name', name)}
+            />
+
+            <Text style={styles.label}>Room Description</Text>
+            <TextInput
+              placeholder="Please enter description"
+              placeholderTextColor="#ccc"
+              style={[styles.input, {height: 80}]}
+              multiline
+              numberOfLines={5}
+              textAlignVertical="top"
+              onChangeText={des => handleChange('description', des)}
+            />
+
+            <Text style={styles.label}>Room Participants Limit</Text>
+            <View style={styles.dropdownContainer}>
+              <TouchableOpacity
+                style={styles.selector}
+                onPress={() => setShowDropdown(!showDropdown)}>
+                <Text style={styles.selectorText}>
+                  {selectedParticipants} participants
+                </Text>
+                <Icon
+                  name={showDropdown ? 'chevron-up' : 'chevron-down'}
+                  size={20}
+                  color="#fff"
+                />
+              </TouchableOpacity>
+
+              {showDropdown && (
+                <View style={styles.dropdown}>
+                  {participantOptions.map(option => (
+                    <TouchableOpacity
+                      key={option}
+                      style={[
+                        styles.dropdownItem,
+                        selectedParticipants === option &&
+                          styles.selectedDropdownItem,
+                      ]}
+                      onPress={() => selectParticipants(option)}>
+                      <Text
+                        style={[
+                          styles.dropdownItemText,
+                          selectedParticipants === option &&
+                            styles.selectedDropdownItemText,
+                        ]}>
+                        {option} participants
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+            </View>
+          </View>
+        </ScrollView>
+
+        {/* Create Button - Fixed at bottom */}
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity style={styles.nextButton} onPress={handleSubmit}>
+            <Text style={styles.nextButtonText}>Create Room</Text>
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
@@ -209,6 +227,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#0F172A',
     padding: 16,
+  },
+  keyboardAvoidingView: {
+    flex: 1,
   },
   header: {
     flexDirection: 'row',
@@ -223,6 +244,12 @@ const styles = StyleSheet.create({
     width: '100%',
     textAlign: 'center',
     paddingRight: 50,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 20,
   },
   form: {
     flex: 1,
@@ -301,12 +328,15 @@ const styles = StyleSheet.create({
     color: '#0F172A',
     fontWeight: 'bold',
   },
+  buttonContainer: {
+    paddingTop: 16,
+    paddingBottom: Platform.OS === 'ios' ? 20 : 16,
+  },
   nextButton: {
     backgroundColor: '#D4ACFB',
     padding: 14,
     borderRadius: 24,
     alignItems: 'center',
-    marginBottom: 20,
   },
   nextButtonText: {
     color: '#fff',

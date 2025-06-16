@@ -50,7 +50,6 @@ export default function Login() {
         
         await storeDataInStore('token', token);
         await storeDataInStore('user', user);
-        // await storeDataInStore('streamToken', streamToken);
         refreshAllUserData();
 
         if (socket.disconnected) {

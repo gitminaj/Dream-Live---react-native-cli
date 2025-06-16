@@ -1,5 +1,5 @@
-import { useRoute, useNavigation } from '@react-navigation/native';
-import React, { useRef, useState } from 'react';
+import {useRoute, useNavigation} from '@react-navigation/native';
+import React, {useContext, useRef, useState} from 'react';
 import {
   View,
   Text,
@@ -11,12 +11,17 @@ import {
   Platform,
   Image,
 } from 'react-native';
-import { BASE_URL } from '../../utils/constant';
-import  axios  from 'axios';
+import {BASE_URL} from '../../utils/constant';
+import axios from 'axios';
+import {storeDataInStore} from '../../store';
+import {UserContext} from '../../utils/context/user-context';
+import {socket} from '../../utils/socket';
 
-const { width } = Dimensions.get('window');
+import * as Burnt from 'burnt';
+
+const {width} = Dimensions.get('window');
 const scale = width / 375;
-const normalize = (size) => Math.round(scale * size);
+const normalize = size => Math.round(scale * size);
 
 export default function EmailVerification() {
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
@@ -24,17 +29,19 @@ export default function EmailVerification() {
   const route = useRoute();
   const [error, setError] = useState('');
   const navigation = useNavigation();
-  const { formData, fileData } = route.params;
+  const {formData, fileData} = route.params;
 
-//   const  userData  ={
-//     userName: "name",
-//   email: 'mail@gmail.com',
-//   password: 'password',
-//   gender: 'M',
-//   age: Number(5),
-//   location: 'mumbhai',
-//   otp: 74581
-// }
+  const {refreshAllUserData} = useContext(UserContext);
+
+  //   const  userData  ={
+  //     userName: "name",
+  //   email: 'mail@gmail.com',
+  //   password: 'password',
+  //   gender: 'M',
+  //   age: Number(5),
+  //   location: 'mumbhai',
+  //   otp: 74581
+  // }
 
   const handleChange = (text, index) => {
     const newOtp = [...otp];
@@ -51,65 +58,83 @@ export default function EmailVerification() {
     }
   };
 
- const handleVerifyOtp = async () => {
-  const userEnteredOtp = otp.join('');
+  const handleVerifyOtp = async () => {
+    const userEnteredOtp = otp.join('');
 
-  console.log('Form data from route:', formData);
-  console.log('File data from route:', fileData);
-  console.log('OTP entered:', userEnteredOtp);
+    console.log('Form data from route:', formData);
+    console.log('File data from route:', fileData);
+    console.log('OTP entered:', userEnteredOtp);
 
-  const formDataToSubmit = new FormData();
+    const formDataToSubmit = new FormData();
 
-  Object.keys(formData).forEach(key => {
-    formDataToSubmit.append(key, formData[key]);
-  });
+    Object.keys(formData).forEach(key => {
+      formDataToSubmit.append(key, formData[key]);
+    });
 
-  formDataToSubmit.append('otp', userEnteredOtp.trim());
+    formDataToSubmit.append('otp', userEnteredOtp.trim());
 
-  // Only add profile if user selected one
-  if (fileData) {
-    formDataToSubmit.append('profile', fileData);
-  }
+    // Only add profile if user selected one
+    if (fileData) {
+      formDataToSubmit.append('profile', fileData);
+    }
 
-  try {
-    console.log('Submitting FormData payload', formDataToSubmit);
-    const response = await axios.post(
-      `${BASE_URL}/auth/register`,
-      formDataToSubmit,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data',
+    try {
+      console.log('Submitting FormData payload', formDataToSubmit);
+      const response = await axios.post(
+        `${BASE_URL}/auth/register`,
+        formDataToSubmit,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+          timeout: 60000,
         },
-      }
-    );
-    console.log('Registration response:', response);
-    navigation.replace('Login');
-  } catch (err) {
-    console.log('Registration error:', JSON.stringify(err, null, 2));
-    setError((err?.response?.data?.message || err?.response?.data?.error) || 'Registration failed');
-  }
-};
+      );
+      console.log('Registration response:', response);
+      const {token, user} = response.data;
 
+      await storeDataInStore('token', token);
+      await storeDataInStore('user', user);
+      refreshAllUserData();
+
+      if (socket.disconnected) {
+        socket.connect();
+      }
+
+      socket.emit('authenticate', {userId: user?._id});
+        Burnt.toast({
+                title: 'Registered Successfully!',
+                preset: 'done',
+              });
+      navigation.replace('Home');
+    } catch (err) {
+      console.log('Registration error:', JSON.stringify(err, null, 2));
+      setError(
+        err?.response?.data?.message ||
+          err?.response?.data?.error ||
+          'Registration failed',
+      );
+    }
+  };
 
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <Text style={styles.title}>Verify Email</Text>
-      {error && <Text style={{ color: 'red' }} > {error} </Text>}
+      {error && <Text style={{color: 'red'}}> {error} </Text>}
 
       <View style={styles.otpContainer}>
         {otp.map((digit, index) => (
           <TextInput
             key={index}
-            ref={(ref) => (inputs.current[index] = ref)}
+            ref={ref => (inputs.current[index] = ref)}
             style={styles.otpInput}
             keyboardType="numeric"
             maxLength={1}
             value={digit}
-            onChangeText={(text) => handleChange(text, index)}
-            onKeyPress={({ nativeEvent }) =>
+            onChangeText={text => handleChange(text, index)}
+            onKeyPress={({nativeEvent}) =>
               handleBackspace(nativeEvent.key, index)
             }
           />

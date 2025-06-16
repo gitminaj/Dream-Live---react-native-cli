@@ -39,19 +39,20 @@ const MessageList = () => {
         },
       );
 
-      setRoomsDetails(response?.data?.chatRooms)
+      setRoomsDetails(response?.data?.chatRooms.filter(room => room.type === "private"))
 
       setRooms(
-        response.data.chatRooms.map(
-          room =>
-            room.participants.filter(partic => partic._id !== user._id)[0],
-        ),
-      );
-      console.log('rooms', rooms);
+  response.data.chatRooms
+    .filter(room => room.type === "private") // ✅ only keep private rooms
+    .map(room =>
+      room.participants.filter(partic => partic._id !== user._id)[0]
+    )
+);
       console.log('res room', response);
     };
-
+    
     getRooms();
+    console.log('rooms', rooms);
   }, []);
 
   const renderChatItem = ({item}) =>{ 
@@ -120,7 +121,7 @@ const MessageList = () => {
       <FlatList
         data={roomsDetails}
         renderItem={renderChatItem}
-        keyExtractor={item => item.id}
+        keyExtractor={item => item._id}
         showsVerticalScrollIndicator={false}
       />
     </SafeAreaView>

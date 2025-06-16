@@ -34,7 +34,8 @@ const LiveChatRoom = ({ navigation, route }) => {
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const messagesRef = useRef(null);
 
-  console.log('chr', chatRoomId, chatRoom, userId )
+  console.log('chr', chatRoomId, chatRoom, userId );
+  console.log('user chatroom', user );
 
   // Function to handle leaving room with confirmation
   const handleLeaveRoom = () => {
@@ -329,7 +330,7 @@ const LiveChatRoom = ({ navigation, route }) => {
     const tempMessage = {
       _id: tempId,
       content: messageText.trim(),
-      sender: { _id: userId, name: user.name || 'You' },
+      sender: { _id: userId, name: user.name || 'You', profile: user?.profile },
       messageType: 'text',
       createdAt: new Date().toISOString(),
       isTemp: true,
@@ -386,6 +387,8 @@ const LiveChatRoom = ({ navigation, route }) => {
       previousMessage.messageType === 'system' ||
       previousMessage.sender?._id !== item.sender?._id;
 
+      console.log('item', item)
+
     return (
       <View style={styles.messageWrapper}>
         <View style={styles.messageContainer}>
@@ -393,7 +396,7 @@ const LiveChatRoom = ({ navigation, route }) => {
             <Image
               source={{
                 uri: item.sender?.profile 
-                  ? `${BACKEND_URL}/${item.sender.profile.replace(/\\/g, '/')}`
+                  ? `${BACKEND_URL}/${item?.sender?.profile.replace(/\\/g, '/')}`
                   : 'https://via.placeholder.com/32'
               }}
               style={styles.messageSenderAvatar}

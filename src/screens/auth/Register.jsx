@@ -88,9 +88,7 @@ export default function Register() {
     const result = registerSchema.safeParse(form);
 
     if (result.success) {
-      console.log('inside try');
       try {
-        console.log('inside try');
         // First send OTP without image data
         const response = await axios.post(`${BASE_URL}/auth/sendotp`, {
           email: form.email,
