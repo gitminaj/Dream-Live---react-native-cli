@@ -30,7 +30,7 @@ const VipRules = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#151C30" />
-      
+    
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity 

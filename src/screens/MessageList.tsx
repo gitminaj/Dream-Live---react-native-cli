@@ -17,8 +17,7 @@ import {BACKEND_URL, BASE_URL} from '../utils/constant';
 import {UserContext} from '../utils/context/user-context';
 import {getDataFromStore} from '../store';
 
-
-
+import Icon from 'react-native-vector-icons/Ionicons';
 
 const MessageList = () => {
   const {user} = useContext(UserContext);
@@ -59,7 +58,6 @@ const MessageList = () => {
     const users = item.participants.filter(partic => partic?._id !== user?._id);
     console.log('item', item);
     console.log('users', users);
-
         
     return (
     <TouchableOpacity
@@ -81,6 +79,12 @@ const MessageList = () => {
 
   const renderHeader = () => (
     <View style={styles.header}>
+      <TouchableOpacity 
+                        style={styles.backButton} 
+                        onPress={() => navigation.goBack()}
+                      >
+                        <Icon name="chevron-back" size={24} color="#FFFFFF" />
+                      </TouchableOpacity>
       <Text style={styles.headerTitle}>Chats</Text>
       <TouchableOpacity style={styles.inviteButton}>
         <Feather

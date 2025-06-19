@@ -31,6 +31,7 @@
     "react": "19.0.0",
     "react-native": "0.79.1",
     "react-native-app-intro-slider": "^4.0.4",
+    "react-native-emoji-selector": "^0.2.0",
     "react-native-flash-message": "^0.4.2",
     "react-native-fs": "^2.20.0",
     "react-native-gesture-handler": "^2.25.0",

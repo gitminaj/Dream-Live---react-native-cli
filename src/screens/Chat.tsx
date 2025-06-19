@@ -10,16 +10,978 @@ import {
   Alert,
   Modal,
   Animated,
+  PermissionsAndroid,
+  Platform,
+  ScrollView,
+  Dimensions,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Entypo';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import {launchImageLibrary, launchCamera} from 'react-native-image-picker';
+import DocumentPicker from 'react-native-document-picker';
 import {useRoute} from '@react-navigation/native';
 import {socket} from '../utils/socket';
 import {BACKEND_URL, BASE_URL} from '../utils/constant';
 import axios from 'axios';
 import {getDataFromStore} from '../store';
 import {UserContext} from '../utils/context/user-context';
+
+const {width} = Dimensions.get('window');
+
+const emojiCategories = [
+  {
+    title: 'Smileys & People',
+    emojis: [
+      '😀',
+      '😃',
+      '😄',
+      '😁',
+      '😆',
+      '😅',
+      '😂',
+      '🤣',
+      '😊',
+      '😇',
+      '🙂',
+      '🙃',
+      '😉',
+      '😌',
+      '😍',
+      '🥰',
+      '😘',
+      '😗',
+      '😙',
+      '😚',
+      '😋',
+      '😛',
+      '😝',
+      '😜',
+      '🤪',
+      '🤨',
+      '🧐',
+      '🤓',
+      '😎',
+      '🤩',
+      '🥳',
+      '😏',
+      '😒',
+      '😞',
+      '😔',
+      '😟',
+      '😕',
+      '🙁',
+      '☹️',
+      '😣',
+      '😖',
+      '😫',
+      '😩',
+      '🥺',
+      '😢',
+      '😭',
+      '😤',
+      '😠',
+      '😡',
+      '🤬',
+      '🤯',
+      '😳',
+      '🥵',
+      '🥶',
+      '😱',
+      '😨',
+      '😰',
+      '😥',
+      '😓',
+      '🤗',
+      '🤔',
+      '🤭',
+      '🤫',
+      '🤥',
+      '😶',
+      '😐',
+      '😑',
+      '😬',
+      '🙄',
+      '😯',
+      '😦',
+      '😧',
+      '😮',
+      '😲',
+      '🥱',
+      '😴',
+      '🤤',
+      '😪',
+      '😵',
+      '🤐',
+      '🥴',
+      '🤢',
+      '🤮',
+      '🤧',
+      '😷',
+      '🤒',
+      '🤕',
+    ],
+  },
+  {
+    title: 'Animals & Nature',
+    emojis: [
+      '🐶',
+      '🐱',
+      '🐭',
+      '🐹',
+      '🐰',
+      '🦊',
+      '🐻',
+      '🐼',
+      '🐨',
+      '🐯',
+      '🦁',
+      '🐮',
+      '🐷',
+      '🐽',
+      '🐸',
+      '🐵',
+      '🙈',
+      '🙉',
+      '🙊',
+      '🐒',
+      '🐔',
+      '🐧',
+      '🐦',
+      '🐤',
+      '🐣',
+      '🐥',
+      '🦆',
+      '🦅',
+      '🦉',
+      '🦇',
+      '🐺',
+      '🐗',
+      '🐴',
+      '🦄',
+      '🐝',
+      '🐛',
+      '🦋',
+      '🐌',
+      '🐞',
+      '🐜',
+      '🦟',
+      '🦗',
+      '🕷️',
+      '🦂',
+      '🐢',
+      '🐍',
+      '🦎',
+      '🦖',
+      '🦕',
+      '🐙',
+      '🦑',
+      '🦐',
+      '🦞',
+      '🦀',
+      '🐡',
+      '🐠',
+      '🐟',
+      '🐬',
+      '🐳',
+      '🐋',
+      '🦈',
+      '🐊',
+      '🐅',
+      '🐆',
+      '🦓',
+      '🦍',
+      '🦧',
+      '🐘',
+      '🦛',
+      '🦏',
+      '🐪',
+      '🐫',
+      '🦒',
+      '🦘',
+      '🐃',
+      '🐂',
+      '🐄',
+      '🐎',
+      '🐖',
+      '🐏',
+      '🐑',
+      '🦙',
+      '🐐',
+      '🦌',
+      '🐕',
+      '🐩',
+      '🦮',
+      '🐕‍🦺',
+      '🐈',
+      '🐓',
+      '🦃',
+      '🦚',
+      '🦜',
+      '🦢',
+      '🦩',
+      '🕊️',
+      '🐇',
+      '🦝',
+      '🦨',
+      '🦡',
+      '🦦',
+      '🦥',
+      '🐁',
+      '🐀',
+      '🐿️',
+      '🦔',
+    ],
+  },
+  {
+    title: 'Food & Drink',
+    emojis: [
+      '🍏',
+      '🍎',
+      '🍐',
+      '🍊',
+      '🍋',
+      '🍌',
+      '🍉',
+      '🍇',
+      '🍓',
+      '🫐',
+      '🍈',
+      '🍒',
+      '🍑',
+      '🥭',
+      '🍍',
+      '🥥',
+      '🥝',
+      '🍅',
+      '🍆',
+      '🥑',
+      '🥦',
+      '🥬',
+      '🥒',
+      '🌶️',
+      '🫑',
+      '🌽',
+      '🥕',
+      '🫒',
+      '🧄',
+      '🧅',
+      '🥔',
+      '🍠',
+      '🥐',
+      '🥯',
+      '🍞',
+      '🥖',
+      '🥨',
+      '🧀',
+      '🥚',
+      '🍳',
+      '🧈',
+      '🥞',
+      '🧇',
+      '🥓',
+      '🥩',
+      '🍗',
+      '🍖',
+      '🦴',
+      '🌭',
+      '🍔',
+      '🍟',
+      '🍕',
+      '🫓',
+      '🥪',
+      '🥙',
+      '🧆',
+      '🌮',
+      '🌯',
+      '🫔',
+      '🥗',
+      '🥘',
+      '🫕',
+      '🥫',
+      '🍝',
+      '🍜',
+      '🍲',
+      '🍛',
+      '🍣',
+      '🍱',
+      '🥟',
+      '🦪',
+      '🍤',
+      '🍙',
+      '🍚',
+      '🍘',
+      '🍥',
+      '🥠',
+      '🥮',
+      '🍢',
+      '🍡',
+      '🍧',
+      '🍨',
+      '🍦',
+      '🥧',
+      '🧁',
+      '🍰',
+      '🎂',
+      '🍮',
+      '🍭',
+      '🍬',
+      '🍫',
+      '🍿',
+      '🍩',
+      '🍪',
+      '🌰',
+      '🥜',
+      '🍯',
+      '🥛',
+      '🍼',
+      '☕',
+      '🍵',
+      '🧃',
+      '🥤',
+      '🍶',
+      '🍺',
+      '🍻',
+      '🥂',
+      '🍷',
+      '🥃',
+      '🍸',
+      '🍹',
+      '🧉',
+      '🍾',
+    ],
+  },
+  {
+    title: 'Activities',
+    emojis: [
+      '⚽',
+      '🏀',
+      '🏈',
+      '⚾',
+      '🥎',
+      '🎾',
+      '🏐',
+      '🏉',
+      '🥏',
+      '🎱',
+      '🪀',
+      '🏓',
+      '🏸',
+      '🏒',
+      '🏑',
+      '🥍',
+      '🏏',
+      '🪃',
+      '🥅',
+      '⛳',
+      '🪁',
+      '🏹',
+      '🎣',
+      '🤿',
+      '🥊',
+      '🥋',
+      '🎽',
+      '🛹',
+      '🛷',
+      '⛸️',
+      '🥌',
+      '🎿',
+      '⛷️',
+      '🏂',
+      '🪂',
+      '🏋️‍♀️',
+      '🏋️',
+      '🏋️‍♂️',
+      '🤼‍♀️',
+      '🤼',
+      '🤼‍♂️',
+      '🤸‍♀️',
+      '🤸',
+      '🤸‍♂️',
+      '⛹️‍♀️',
+      '⛹️',
+      '⛹️‍♂️',
+      '🤺',
+      '🤾‍♀️',
+      '🤾',
+      '🤾‍♂️',
+      '🏌️‍♀️',
+      '🏌️',
+      '🏌️‍♂️',
+      '🏇',
+      '🧘‍♀️',
+      '🧘',
+      '🧘‍♂️',
+      '🏄‍♀️',
+      '🏄',
+      '🏄‍♂️',
+      '🏊‍♀️',
+      '🏊',
+      '🏊‍♂️',
+      '🤽‍♀️',
+      '🤽',
+      '🤽‍♂️',
+      '🚣‍♀️',
+      '🚣',
+      '🚣‍♂️',
+      '🧗‍♀️',
+      '🧗',
+      '🧗‍♂️',
+      '🚵‍♀️',
+      '🚵',
+      '🚵‍♂️',
+      '🚴‍♀️',
+      '🚴',
+      '🚴‍♂️',
+      '🏆',
+      '🥇',
+      '🥈',
+      '🥉',
+      '🏅',
+      '🎖️',
+      '🏵️',
+      '🎗️',
+      '🎫',
+      '🎟️',
+      '🎪',
+      '🤹‍♀️',
+      '🤹',
+      '🤹‍♂️',
+      '🎭',
+      '🩰',
+      '🎨',
+      '🎬',
+      '🎤',
+      '🎧',
+      '🎼',
+      '🎹',
+      '🥁',
+      '🪘',
+      '🎷',
+      '🎺',
+      '🎸',
+      '🪕',
+      '🎻',
+      '🎲',
+      '♟️',
+      '🎯',
+      '🎳',
+      '🎮',
+      '🎰',
+      '🧩',
+    ],
+  },
+  {
+    title: 'Travel & Places',
+    emojis: [
+      '🚗',
+      '🚕',
+      '🚙',
+      '🚌',
+      '🚎',
+      '🏎️',
+      '🚓',
+      '🚑',
+      '🚒',
+      '🚐',
+      '🛻',
+      '🚚',
+      '🚛',
+      '🚜',
+      '🏍️',
+      '🛵',
+      '🚲',
+      '🛴',
+      '🛹',
+      '🛼',
+      '🚁',
+      '🛸',
+      '✈️',
+      '🛩️',
+      '🛫',
+      '🛬',
+      '🪂',
+      '💺',
+      '🚀',
+      '🛰️',
+      '🚉',
+      '🚊',
+      '🚝',
+      '🚞',
+      '🚋',
+      '🚃',
+      '🚋',
+      '🚞',
+      '🚝',
+      '🚄',
+      '🚅',
+      '🚈',
+      '🚂',
+      '🚆',
+      '🚇',
+      '🚊',
+      '🚉',
+      '✈️',
+      '🛫',
+      '🛬',
+      '🛩️',
+      '💺',
+      '🛰️',
+      '🚀',
+      '🛸',
+      '🚁',
+      '🛶',
+      '⛵',
+      '🚤',
+      '🛥️',
+      '🛳️',
+      '⛴️',
+      '🚢',
+      '⚓',
+      '⛽',
+      '🚧',
+      '🚨',
+      '🚥',
+      '🚦',
+      '🛑',
+      '🚏',
+      '🗺️',
+      '🗿',
+      '🗽',
+      '🗼',
+      '🏰',
+      '🏯',
+      '🏟️',
+      '🎡',
+      '🎢',
+      '🎠',
+      '⛲',
+      '⛱️',
+      '🏖️',
+      '🏝️',
+      '🏜️',
+      '🌋',
+      '⛰️',
+      '🏔️',
+      '🗻',
+      '🏕️',
+      '⛺',
+      '🏠',
+      '🏡',
+      '🏘️',
+      '🏚️',
+      '🏗️',
+      '🏭',
+      '🏢',
+      '🏬',
+      '🏣',
+      '🏤',
+      '🏥',
+      '🏦',
+      '🏨',
+      '🏪',
+      '🏫',
+      '🏩',
+      '💒',
+      '🏛️',
+      '⛪',
+      '🕌',
+      '🕍',
+      '🛕',
+      '🕋',
+      '⛩️',
+      '🛤️',
+      '🛣️',
+      '🗾',
+      '🎑',
+      '🏞️',
+      '🌅',
+      '🌄',
+      '🌠',
+      '🎇',
+      '🎆',
+      '🌇',
+      '🌆',
+      '🏙️',
+      '🌃',
+      '🌌',
+      '🌉',
+      '🌁',
+    ],
+  },
+  {
+    title: 'Objects',
+    emojis: [
+      '⌚',
+      '📱',
+      '📲',
+      '💻',
+      '⌨️',
+      '🖥️',
+      '🖨️',
+      '🖱️',
+      '🖲️',
+      '🕹️',
+      '🗜️',
+      '💽',
+      '💾',
+      '💿',
+      '📀',
+      '📼',
+      '📷',
+      '📸',
+      '📹',
+      '🎥',
+      '📽️',
+      '🎞️',
+      '📞',
+      '☎️',
+      '📟',
+      '📠',
+      '📺',
+      '📻',
+      '🎙️',
+      '🎚️',
+      '🎛️',
+      '🧭',
+      '⏱️',
+      '⏲️',
+      '⏰',
+      '🕰️',
+      '⌛',
+      '⏳',
+      '📡',
+      '🔋',
+      '🔌',
+      '💡',
+      '🔦',
+      '🕯️',
+      '🪔',
+      '🧯',
+      '🛢️',
+      '💸',
+      '💵',
+      '💴',
+      '💶',
+      '💷',
+      '💰',
+      '💳',
+      '💎',
+      '⚖️',
+      '🧰',
+      '🔧',
+      '🔨',
+      '⚒️',
+      '🛠️',
+      '⛏️',
+      '🔩',
+      '⚙️',
+      '🧱',
+      '⛓️',
+      '🧲',
+      '🔫',
+      '💣',
+      '🧨',
+      '🪓',
+      '🔪',
+      '🗡️',
+      '⚔️',
+      '🛡️',
+      '🚬',
+      '⚰️',
+      '⚱️',
+      '🏺',
+      '🔮',
+      '📿',
+      '🧿',
+      '💈',
+      '⚗️',
+      '🔭',
+      '🔬',
+      '🕳️',
+      '🩹',
+      '🩺',
+      '💊',
+      '💉',
+      '🧬',
+      '🦠',
+      '🧫',
+      '🧪',
+      '🌡️',
+      '🧹',
+      '🧺',
+      '🧻',
+      '🚽',
+      '🚰',
+      '🚿',
+      '🛁',
+      '🛀',
+      '🧼',
+      '🪒',
+      '🧽',
+      '🧴',
+      '🛎️',
+      '🔑',
+      '🗝️',
+      '🚪',
+      '🪑',
+      '🛏️',
+      '🛋️',
+      '🪞',
+      '🚿',
+      '🛁',
+      '🚽',
+      '🧻',
+      '🧺',
+      '🧹',
+      '🧼',
+      '🪒',
+      '🧽',
+      '🧴',
+      '🛎️',
+      '🔑',
+      '🗝️',
+      '🚪',
+      '🪑',
+      '🛏️',
+      '🛋️',
+      '🪞',
+    ],
+  },
+  {
+    title: 'Symbols',
+    emojis: [
+      '❤️',
+      '🧡',
+      '💛',
+      '💚',
+      '💙',
+      '💜',
+      '🖤',
+      '🤍',
+      '🤎',
+      '💔',
+      '❣️',
+      '💕',
+      '💞',
+      '💓',
+      '💗',
+      '💖',
+      '💘',
+      '💝',
+      '💟',
+      '☮️',
+      '✝️',
+      '☪️',
+      '🕉️',
+      '☸️',
+      '✡️',
+      '🔯',
+      '🕎',
+      '☯️',
+      '☦️',
+      '🛐',
+      '⛎',
+      '♈',
+      '♉',
+      '♊',
+      '♋',
+      '♌',
+      '♍',
+      '♎',
+      '♏',
+      '♐',
+      '♑',
+      '♒',
+      '♓',
+      '🆔',
+      '⚛️',
+      '🉑',
+      '☢️',
+      '☣️',
+      '📴',
+      '📳',
+      '🈶',
+      '🈚',
+      '🈸',
+      '🈺',
+      '🈷️',
+      '✴️',
+      '🆚',
+      '💮',
+      '🉐',
+      '㊙️',
+      '㊗️',
+      '🈴',
+      '🈵',
+      '🈹',
+      '🈲',
+      '🅰️',
+      '🅱️',
+      '🆎',
+      '🆑',
+      '🅾️',
+      '🆘',
+      '❌',
+      '⭕',
+      '🛑',
+      '⛔',
+      '📛',
+      '🚫',
+      '💯',
+      '💢',
+      '♨️',
+      '🚷',
+      '🚯',
+      '🚳',
+      '🚱',
+      '🔞',
+      '📵',
+      '🚭',
+      '❗',
+      '❕',
+      '❓',
+      '❔',
+      '‼️',
+      '⁉️',
+      '🔅',
+      '🔆',
+      '〽️',
+      '⚠️',
+      '🚸',
+      '🔱',
+      '⚜️',
+      '🔰',
+      '♻️',
+      '✅',
+      '🈯',
+      '💹',
+      '❇️',
+      '✳️',
+      '❎',
+      '🌐',
+      '💠',
+      'Ⓜ️',
+      '🌀',
+      '💤',
+      '🏧',
+      '🚾',
+      '♿',
+      '🅿️',
+      '🈳',
+      '🈂️',
+      '🛂',
+      '🛃',
+      '🛄',
+      '🛅',
+      '🚹',
+      '🚺',
+      '🚼',
+      '🚻',
+      '🚮',
+      '🎦',
+      '📶',
+      '🈁',
+      '🔣',
+      'ℹ️',
+      '🔤',
+      '🔡',
+      '🔠',
+      '🆖',
+      '🆗',
+      '🆙',
+      '🆒',
+      '🆕',
+      '🆓',
+      '0️⃣',
+      '1️⃣',
+      '2️⃣',
+      '3️⃣',
+      '4️⃣',
+      '5️⃣',
+      '6️⃣',
+      '7️⃣',
+      '8️⃣',
+      '9️⃣',
+      '🔟',
+    ],
+  },
+];
+
+
+const CustomEmojiPicker = ({onEmojiSelected, onClose}) => {
+  const [selectedCategory, setSelectedCategory] = useState(0);
+  const [pressedEmoji, setPressedEmoji] = useState(null);
+
+  const renderEmoji = (emoji, index) => (
+    <TouchableOpacity
+      key={`${emoji}-${index}`}
+      style={[
+        styles.emojiItem,
+        pressedEmoji === emoji && styles.emojiItemPressed,
+      ]}
+      onPress={() => onEmojiSelected(emoji)}
+      onPressIn={() => setPressedEmoji(emoji)}
+      onPressOut={() => setPressedEmoji(null)}
+      activeOpacity={0.7}>
+      <Text style={styles.emojiText}>{emoji}</Text>
+    </TouchableOpacity>
+  );
+
+  const renderCategory = (category, index) => (
+    <TouchableOpacity
+      key={index}
+      style={[
+        styles.categoryTab,
+        selectedCategory === index && styles.selectedCategoryTab,
+      ]}
+      onPress={() => setSelectedCategory(index)}
+      activeOpacity={0.8}>
+      <Text
+        style={[
+          styles.categoryTabText,
+          selectedCategory === index && styles.selectedCategoryTabText,
+        ]}>
+        {category.emojis[0]}
+      </Text>
+    </TouchableOpacity>
+  );
+
+  return (
+    <View style={styles.emojiPickerContainer}>
+      <View style={styles.emojiPickerHeader}>
+        <Text style={styles.emojiPickerTitle}>
+          {emojiCategories[selectedCategory].title}
+        </Text>
+        <TouchableOpacity
+          onPress={onClose}
+          style={styles.closeButton}
+          activeOpacity={0.7}>
+          <MaterialIcons name="close" size={20} color="#94A3B8" />
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView
+        style={styles.categoryTabs}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{paddingHorizontal: 8}}>
+        {emojiCategories.map(renderCategory)}
+      </ScrollView>
+
+      <ScrollView
+        style={styles.emojiGrid}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{paddingBottom: 20}}>
+        <View style={styles.emojiContainer}>
+          {emojiCategories[selectedCategory].emojis.map((emoji, index) =>
+            renderEmoji(emoji, index),
+          )}
+        </View>
+      </ScrollView>
+    </View>
+  );
+};
 
 export default function ChatScreen() {
   const route = useRoute();
@@ -32,10 +994,15 @@ export default function ChatScreen() {
   const [currentMessage, setCurrentMessage] = useState('');
   const [receiverInfo, setReceiverInfo] = useState();
   const [showActionModal, setShowActionModal] = useState(false);
+  const [showAttachmentModal, setShowAttachmentModal] = useState(false);
   const [selectedMessage, setSelectedMessage] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const flatListRef = useRef();
   const modalAnimation = useRef(new Animated.Value(0)).current;
+  const attachmentModalAnimation = useRef(new Animated.Value(0)).current;
+
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
   console.log('route params', roomId, receiverUserId, roomDetails);
 
@@ -50,29 +1017,232 @@ export default function ChatScreen() {
   const formatLastSeen = info => {
     if (!info) return '';
 
+    if (info.isOnline) return 'Online';
+
     const last = new Date(info.lastSeen);
     const now = new Date();
-    const diffMs = now - last;
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-    if (info.isOnline) {
-      return 'Online';
-    }
 
     const sameDay = last.toDateString() === now.toDateString();
+    const yesterday = new Date();
+    yesterday.setDate(now.getDate() - 1);
+    const isYesterday = last.toDateString() === yesterday.toDateString();
+
     if (sameDay) {
       return `Last seen today at ${last.toLocaleTimeString([], {
         hour: '2-digit',
         minute: '2-digit',
       })}`;
-    } else if (diffDays === 1) {
+    } else if (isYesterday) {
       return `Last seen yesterday at ${last.toLocaleTimeString([], {
         hour: '2-digit',
         minute: '2-digit',
       })}`;
     } else {
+      const diffDays = Math.floor((now - last) / (1000 * 60 * 60 * 24));
       return `Last seen ${diffDays} days ago`;
     }
+  };
+
+  const requestCameraPermission = async () => {
+    if (Platform.OS === 'android') {
+      try {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.CAMERA,
+          {
+            title: 'Camera Permission',
+            message: 'This app needs access to camera to take photos.',
+            buttonNeutral: 'Ask Me Later',
+            buttonNegative: 'Cancel',
+            buttonPositive: 'OK',
+          },
+        );
+        return granted === PermissionsAndroid.RESULTS.GRANTED;
+      } catch (err) {
+        console.warn(err);
+        return false;
+      }
+    }
+    return true;
+  };
+
+  const sendMessageWithAttachment = async (
+    fileUri,
+    fileName,
+    fileType,
+    messageType,
+  ) => {
+    try {
+      const token = await getDataFromStore('token');
+      const formData = new FormData();
+
+      // Append file
+      formData.append('file', {
+        uri: fileUri,
+        type: fileType,
+        name: fileName,
+      });
+
+      // Append other message data
+      formData.append('senderId', currentUserId);
+      formData.append('messageType', messageType);
+      // Don't set default content, let it be empty or set appropriate content
+      if (messageType !== 'image' && messageType !== 'video') {
+        formData.append('content', '');
+      }
+
+      console.log('formdata', formData);
+
+      const response = await axios.post(
+        `${BASE_URL}/chat/rooms/${roomId}/messages`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      console.log('Upload response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error(
+        'Send attachment error:',
+        error.response?.data || error.message,
+      );
+      throw error;
+    }
+  };
+
+  const handleAttachmentSelect = type => {
+    hideAttachmentModal();
+
+    switch (type) {
+      case 'camera':
+        openCamera();
+        break;
+      case 'gallery':
+        openGallery();
+        break;
+      case 'video':
+        openVideoGallery();
+        break;
+      default:
+        break;
+    }
+  };
+
+  const openCamera = async () => {
+    const hasPermission = await requestCameraPermission();
+    if (!hasPermission) {
+      Alert.alert(
+        'Permission Required',
+        'Camera permission is required to take photos.',
+      );
+      return;
+    }
+
+    const options = {
+      mediaType: 'photo',
+      quality: 0.8,
+      maxWidth: 1080,
+      maxHeight: 1080,
+    };
+
+    launchCamera(options, response => {
+      if (response.didCancel || response.errorMessage) {
+        return;
+      }
+
+      if (response.assets && response.assets[0]) {
+        sendAttachment(response.assets[0], 'image');
+      }
+    });
+  };
+
+  const openGallery = () => {
+    const options = {
+      mediaType: 'photo',
+      quality: 0.8,
+      maxWidth: 1080,
+      maxHeight: 1080,
+      selectionLimit: 1,
+    };
+
+    launchImageLibrary(options, response => {
+      if (response.didCancel || response.errorMessage) {
+        return;
+      }
+
+      if (response.assets && response.assets[0]) {
+        sendAttachment(response.assets[0], 'image');
+      }
+    });
+  };
+
+  const openVideoGallery = () => {
+    const options = {
+      mediaType: 'video',
+      quality: 0.8,
+      videoQuality: 'medium',
+      durationLimit: 60, // 60 seconds limit
+      selectionLimit: 1,
+    };
+
+    launchImageLibrary(options, response => {
+      if (response.didCancel || response.errorMessage) {
+        return;
+      }
+
+      if (response.assets && response.assets[0]) {
+        sendAttachment(response.assets[0], 'video');
+      }
+    });
+  };
+
+  // Send attachment
+  const sendAttachment = async (asset, messageType) => {
+    try {
+      setIsUploading(true);
+
+      // Send message with attachment directly
+      await sendMessageWithAttachment(
+        asset.uri,
+        asset.fileName,
+        asset.type,
+        messageType,
+      );
+    } catch (error) {
+      Alert.alert(
+        'Upload Failed',
+        'Failed to send the file. Please try again.',
+      );
+      console.error('Send attachment error:', error);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  // Show attachment modal
+  const showAttachmentModalWithAnimation = () => {
+    setShowAttachmentModal(true);
+    Animated.spring(attachmentModalAnimation, {
+      toValue: 1,
+      useNativeDriver: true,
+      tension: 100,
+      friction: 8,
+    }).start();
+  };
+
+  const hideAttachmentModal = () => {
+    Animated.spring(attachmentModalAnimation, {
+      toValue: 0,
+      useNativeDriver: true,
+      tension: 100,
+      friction: 8,
+    }).start(() => {
+      setShowAttachmentModal(false);
+    });
   };
 
   useEffect(() => {
@@ -80,7 +1250,6 @@ export default function ChatScreen() {
       const token = await getDataFromStore('token');
       setCurrentUserId(user?._id);
 
-      // Join the room
       socket.emit('joinRoom', {chatRoomId: roomId});
 
       // Fetch existing messages
@@ -93,14 +1262,13 @@ export default function ChatScreen() {
         },
       );
       setMessages(response?.data?.messages);
+      console.log('messages',response?.data?.messages);
 
-      // Listen to new messages
       socket.on('newMessage', newMessage => {
         setMessages(prevMessages => [...prevMessages, newMessage]);
         flatListRef.current?.scrollToOffset({offset: 0, animated: true});
       });
 
-      // Listen to message edits
       socket.on('messageEdited', editedMessage => {
         setMessages(prevMessages =>
           prevMessages.map(msg =>
@@ -109,14 +1277,12 @@ export default function ChatScreen() {
         );
       });
 
-      // Listen to message deletions
       socket.on('messageDeleted', ({messageId}) => {
         setMessages(prevMessages =>
           prevMessages.filter(msg => msg._id !== messageId),
         );
       });
 
-      // Listen to socket errors
       socket.on('error', error => {
         Alert.alert('Error', error.message);
       });
@@ -156,7 +1322,6 @@ export default function ChatScreen() {
     };
   }, [receiverUserId]);
 
-  // Show action modal with animation
   const showActionModalWithAnimation = () => {
     setShowActionModal(true);
     Animated.spring(modalAnimation, {
@@ -167,7 +1332,6 @@ export default function ChatScreen() {
     }).start();
   };
 
-  // Hide action modal with animation
   const hideActionModalWithAnimation = () => {
     Animated.spring(modalAnimation, {
       toValue: 0,
@@ -180,7 +1344,6 @@ export default function ChatScreen() {
     });
   };
 
-  // Handle long press on message
   const handleMessageLongPress = message => {
     if (message.sender._id === currentUserId) {
       setSelectedMessage(message);
@@ -188,7 +1351,6 @@ export default function ChatScreen() {
     }
   };
 
-  // Handle edit message
   const handleEditMessage = () => {
     setIsEditing(true);
     setEditingMessage(selectedMessage);
@@ -196,7 +1358,6 @@ export default function ChatScreen() {
     hideActionModalWithAnimation();
   };
 
-  // Handle delete message with confirmation
   const handleDeleteMessage = () => {
     hideActionModalWithAnimation();
 
@@ -221,22 +1382,24 @@ export default function ChatScreen() {
     );
   };
 
-  // Cancel editing
   const cancelEdit = () => {
     setIsEditing(false);
     setEditingMessage(null);
     setCurrentMessage('');
   };
 
-  // Send or edit message
+  const handleEmojiSelect = emoji => {
+    setCurrentMessage(prev => prev + emoji);
+  };
+
   const sendMessage = () => {
     if (!currentMessage.trim()) return;
 
     if (editingMessage) {
-      console.log("editmessage",editingMessage)
+      console.log('editmessage', editingMessage);
       // Edit existing message
       socket.emit('editMessage', {
-        messageId: editingMessage?._id, // Note: using 'messagesId' to match your socket controller
+        messageId: editingMessage?._id,
         content: currentMessage.trim(),
       });
 
@@ -255,6 +1418,7 @@ export default function ChatScreen() {
     }
 
     setCurrentMessage('');
+    setShowEmojiPicker(false); // Hide emoji picker after sending
   };
 
   const renderMessage = ({item}) => {
@@ -270,13 +1434,58 @@ export default function ChatScreen() {
             styles.messageContainer,
             isCurrentUser ? styles.myMessage : styles.theirMessage,
           ]}>
-          <Text
-            style={[
-              styles.messageText,
-              isCurrentUser ? styles.myMessageText : styles.theirMessageText,
-            ]}>
-            {item.content}
-          </Text>
+          {/* Render attachment if present */}
+          {item.messageType === 'image' && item?.fileUrl && (
+            <>
+            {console.log('here')}
+            <Image
+              // source={{
+              //   uri: item.fileUrl.startsWith('http')
+              //     ? item.fileUrl
+              //     : `${BACKEND_URL}/${item?.fileUrl?.replace(/\\/g, '/')}`,
+              // }}
+              source={{
+                uri: `${BACKEND_URL}/${receiverInfo?.profile.replace(/\\/g, '/')}`,
+              }}
+              style={styles.attachmentImage}
+              resizeMode="cover"
+              onError={error => console.log('Image load error:', error)}
+              onLoad={() => console.log('Image loaded successfully')}
+            />
+            </>
+          )}
+
+          {item.messageType === 'video' && item.fileUrl && (
+            <View style={styles.videoContainer}>
+              <Image
+                source={{
+                  uri: `${BACKEND_URL}/${item?.fileUrl?.replace(/\\/g, '/')}`,
+                }}
+                style={styles.attachmentImage}
+                resizeMode="cover"
+                onError={error => console.log('Video thumbnail error:', error)}
+              />
+              <View style={styles.videoOverlay}>
+                <MaterialIcons
+                  name="play-circle-fill"
+                  size={40}
+                  color="white"
+                />
+              </View>
+            </View>
+          )}
+
+          {/* Render text content */}
+          {item.content && item.messageType === 'text' && (
+            <Text
+              style={[
+                styles.messageText,
+                isCurrentUser ? styles.myMessageText : styles.theirMessageText,
+              ]}>
+              {item.content}
+            </Text>
+          )}
+
           <View style={styles.messageFooter}>
             <Text
               style={[
@@ -303,7 +1512,6 @@ export default function ChatScreen() {
     );
   };
 
-  // Action Modal Component
   const ActionModal = () => (
     <Modal
       transparent={true}
@@ -357,6 +1565,64 @@ export default function ChatScreen() {
     </Modal>
   );
 
+  const AttachmentModal = () => (
+    <Modal
+      transparent={true}
+      visible={showAttachmentModal}
+      animationType="none"
+      onRequestClose={hideAttachmentModal}>
+      <TouchableOpacity
+        style={styles.modalOverlay}
+        activeOpacity={1}
+        onPress={hideAttachmentModal}>
+        <Animated.View
+          style={[
+            styles.attachmentModal,
+            {
+              transform: [
+                {
+                  scale: attachmentModalAnimation.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0.8, 1],
+                  }),
+                },
+              ],
+              opacity: attachmentModalAnimation,
+            },
+          ]}>
+          <Text style={styles.modalTitle}>Select Attachment</Text>
+
+          <TouchableOpacity
+            style={styles.attachmentButton}
+            onPress={() => handleAttachmentSelect('camera')}>
+            <MaterialIcons name="camera-alt" size={24} color="#D4ACFB" />
+            <Text style={styles.attachmentButtonText}>Camera</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.attachmentButton}
+            onPress={() => handleAttachmentSelect('gallery')}>
+            <MaterialIcons name="photo-library" size={24} color="#D4ACFB" />
+            <Text style={styles.attachmentButtonText}>Photo Gallery</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.attachmentButton}
+            onPress={() => handleAttachmentSelect('video')}>
+            <MaterialIcons name="videocam" size={24} color="#D4ACFB" />
+            <Text style={styles.attachmentButtonText}>Video Gallery</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.cancelButton}
+            onPress={hideAttachmentModal}>
+            <Text style={styles.cancelButtonText}>Cancel</Text>
+          </TouchableOpacity>
+        </Animated.View>
+      </TouchableOpacity>
+    </Modal>
+  );
+
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -400,8 +1666,30 @@ export default function ChatScreen() {
         </View>
       )}
 
+      {/* Upload indicator */}
+      {isUploading && (
+        <View style={styles.uploadIndicator}>
+          <MaterialIcons name="cloud-upload" size={16} color="#D4ACFB" />
+          <Text style={styles.uploadingText}>Uploading...</Text>
+        </View>
+      )}
+
+      {/* Emoji Picker */}
+      {showEmojiPicker && (
+        <CustomEmojiPicker
+          onEmojiSelected={handleEmojiSelect}
+          onClose={() => setShowEmojiPicker(false)}
+        />
+      )}
+
       {/* Input Box */}
       <View style={styles.inputContainer}>
+        <TouchableOpacity
+          onPress={() => setShowEmojiPicker(prev => !prev)}
+          style={styles.emojiButton}>
+          <Text style={styles.emojiButtonText}>😊</Text>
+        </TouchableOpacity>
+
         <TextInput
           style={styles.input}
           placeholder={isEditing ? 'Edit your message' : 'Type Your Message'}
@@ -411,7 +1699,22 @@ export default function ChatScreen() {
           underlineColorAndroid="transparent"
           multiline
         />
-        <TouchableOpacity onPress={sendMessage} style={styles.sendButton}>
+
+        <TouchableOpacity
+          onPress={showAttachmentModalWithAnimation}
+          style={styles.attachmentIconButton}
+          disabled={isUploading}>
+          <MaterialIcons
+            name="attach-file"
+            size={24}
+            color={isUploading ? '#ccc' : '#D4ACFB'}
+          />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={sendMessage}
+          style={styles.sendButton}
+          disabled={isUploading}>
           <Text style={styles.sendButtonText}>
             <FontAwesome name={isEditing ? 'check' : 'send'} />
           </Text>
@@ -420,6 +1723,9 @@ export default function ChatScreen() {
 
       {/* Action Modal */}
       <ActionModal />
+
+      {/* Attachment Modal */}
+      <AttachmentModal />
     </View>
   );
 }
@@ -437,6 +1743,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 10,
+  },
+  emojiButton: {
+    paddingHorizontal: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+
+    paddingVertical: 8,
   },
   profileImage: {
     width: 40,
@@ -537,6 +1850,8 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     maxHeight: 100,
     fontSize: 14,
+    // backgroundColor: 'red',
+    margin: 4,
   },
   sendButton: {
     backgroundColor: '#D4ACFB',
@@ -602,5 +1917,200 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
     fontWeight: '500',
+  },
+
+  emojiPickerContainer: {
+    position: 'absolute',
+    bottom: 70, 
+    left: 0,
+    right: 0,
+    height: 280,
+    backgroundColor: '#1E293B',
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: -4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 10,
+    borderTopWidth: 1,
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderColor: '#334155',
+  },
+
+  emojiPickerHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#334155',
+    backgroundColor: '#0F172A',
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+  },
+
+  emojiPickerTitle: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+
+  closeButton: {
+    padding: 4,
+    borderRadius: 12,
+    backgroundColor: '#334155',
+  },
+
+  categoryTabs: {
+    maxHeight: 50,
+    backgroundColor: '#0F172A',
+    borderBottomWidth: 1,
+    borderBottomColor: '#334155',
+  },
+
+  categoryTab: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginHorizontal: 2,
+    borderRadius: 8,
+    backgroundColor: 'transparent',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 50,
+  },
+
+  selectedCategoryTab: {
+    backgroundColor: '#D4ACFB',
+  },
+
+  categoryTabText: {
+    fontSize: 20,
+    opacity: 0.7,
+  },
+
+  selectedCategoryTabText: {
+    opacity: 1,
+  },
+
+  emojiGrid: {
+    flex: 1,
+    paddingHorizontal: 8,
+    paddingTop: 8,
+  },
+
+  emojiContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    paddingBottom: 16,
+  },
+
+  emojiItem: {
+    width: (width - 48) / 8, // 8 emojis per row with padding
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginVertical: 2,
+    borderRadius: 8,
+    backgroundColor: 'transparent',
+  },
+
+  emojiText: {
+    fontSize: 24,
+  },
+
+  emojiButtonText: {
+    fontSize: 20,
+    opacity: 0.8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  emojiItemPressed: {
+    backgroundColor: '#334155',
+    transform: [{scale: 1.1}],
+  },
+
+  attachmentIconButton: {
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 8,
+  },
+
+  uploadIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1E293B',
+    padding: 8,
+    borderRadius: 8,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#D4ACFB',
+  },
+
+  uploadingText: {
+    color: '#D4ACFB',
+    marginLeft: 6,
+    fontSize: 12,
+    fontWeight: '500',
+  },
+
+  attachmentModal: {
+    backgroundColor: '#1E293B',
+    borderRadius: 16,
+    padding: 20,
+    width: '80%',
+    maxWidth: 300,
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+
+  attachmentButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 8,
+    backgroundColor: '#334155',
+    borderWidth: 1,
+    borderColor: '#475569',
+  },
+
+  attachmentButtonText: {
+    color: 'white',
+    fontSize: 16,
+    marginLeft: 12,
+    fontWeight: '500',
+  },
+
+  attachmentImage: {
+    width: '100%',
+    height: 200,
+    borderRadius: 8,
+    marginBottom: 4,
+  },
+
+  videoContainer: {
+    position: 'relative',
+  },
+
+  videoOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 4, 
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    borderRadius: 8,
   },
 });

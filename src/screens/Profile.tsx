@@ -25,6 +25,7 @@ import AntDesign from 'react-native-vector-icons/AntDesign';
 import { BACKEND_URL } from '../utils/constant';
 import MyPosts from './post/MyPosts';
 import { socket } from '../utils/socket';
+import HomeFooter from '../components/HomeFooter';
 
 const MenuItem = ({icon, onPress, title}) => {
   return (
@@ -278,6 +279,7 @@ const handlePostClick = () => {
        
         
       </ScrollView>
+       <HomeFooter />
     </SafeAreaView>
   );
 };

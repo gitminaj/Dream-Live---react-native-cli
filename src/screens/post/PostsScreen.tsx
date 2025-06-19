@@ -22,6 +22,7 @@ import * as Burnt from "burnt";
 
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import Icon from 'react-native-vector-icons/Ionicons';
 
 const {width} = Dimensions.get('window');
 
@@ -268,7 +269,17 @@ const renderPostItem = ({item}) => {
             tintColor={'#5E81F4'}
           />
         }
-        ListHeaderComponent={<Text style={styles.headerText}>My Posts</Text>}
+        ListHeaderComponent={  
+              <View style={styles.header}>
+                <TouchableOpacity 
+                  style={styles.backButton} 
+                  onPress={() => navigation.goBack()}
+                >
+                  <Icon name="chevron-back" size={24} color="#FFFFFF" />
+                </TouchableOpacity>
+                <Text style={styles.headerTitle}>My Posts</Text>
+                <View style={styles.placeholder} />
+              </View>}
         ListEmptyComponent={
           <Text style={styles.emptyText}>No posts available</Text>
         }
@@ -278,6 +289,24 @@ const renderPostItem = ({item}) => {
 };
 
 const styles = StyleSheet.create({
+   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+  },
+  backButton: {
+    padding: 4,
+  },
+  headerTitle: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  placeholder: {
+    width: 24,
+  },
   container: {
     flex: 1,
     backgroundColor: '#0F172A',

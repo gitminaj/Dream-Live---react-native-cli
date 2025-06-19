@@ -65,7 +65,7 @@ export default function FollowCard({name, image, id}) {
         );
         console.log('New room created', res);
         roomDetails = res?.data;
-        roomId = res.data.roomId;
+        roomId = res?.data?.data?._id;
       } catch (error) {
         console.log('Error creating room:', error);
       }

@@ -1,4 +1,3 @@
-// CreateRoomScreen.js
 import React, {useContext, useState} from 'react';
 import {
   View,
@@ -37,6 +36,59 @@ const CreateRoomScreen = ({navigation}) => {
 
   const participantOptions = ['7', '8', '10', '15', '25'];
 
+  // Image dimension validation function - Square format required
+  const validateImageDimensions = (width, height) => {
+    const aspectRatio = width / height;
+    const minAspectRatio = 0.75; // 3:4 ratio (minimum width)
+    const maxAspectRatio = 1.33; // 4:3 ratio (maximum width)
+    
+    // Minimum dimension requirements
+    const minDimension = 200;
+    const maxDimension = 2000;
+    
+    // Check minimum dimensions
+    if (width < minDimension || height < minDimension) {
+      return {
+        isValid: false,
+        message: `Image is too small. Minimum required dimensions: ${minDimension}x${minDimension} pixels.`
+      };
+    }
+    
+    // Check maximum dimensions
+    if (width > maxDimension || height > maxDimension) {
+      return {
+        isValid: false,
+        message: `Image is too large. Maximum allowed dimensions: ${maxDimension}x${maxDimension} pixels.`
+      };
+    }
+    
+    // Check if aspect ratio is within acceptable range
+    if (aspectRatio < minAspectRatio) {
+      return {
+        isValid: false,
+        message: 'Image is too tall. Please select a square or nearly square image (recommended: 500x500 pixels).'
+      };
+    }
+    
+    if (aspectRatio > maxAspectRatio) {
+      return {
+        isValid: false,
+        message: 'Image is too wide. Please select a square or nearly square image (recommended: 500x500 pixels).'
+      };
+    }
+    
+    // Additional check for screenshots and extremely long images
+    const maxDimensionRatio = 1.5; // Stricter ratio for more square-like images
+    if (height > width * maxDimensionRatio || width > height * maxDimensionRatio) {
+      return {
+        isValid: false,
+        message: 'Invalid image format. Please select a square image between 200x200 and 2000x2000 pixels.'
+      };
+    }
+    
+    return { isValid: true };
+  };
+
   const selectImage = () => {
     const options = {
       mediaType: 'photo',
@@ -49,14 +101,42 @@ const CreateRoomScreen = ({navigation}) => {
       if (response.didCancel || response.error) {
         console.log('User cancelled or error');
       } else if (response.assets && response.assets[0]) {
-        setSelectedImage(response.assets[0]);
         const asset = response.assets[0];
-
-        setFileData({
-          uri: asset.uri,
-          type: asset.type || 'image/jpeg',
-          name: asset.fileName || 'photo.jpg',
-        });
+        
+        // Get image dimensions and validate
+        Image.getSize(
+          asset.uri,
+          (width, height) => {
+            console.log('Image dimensions:', width, 'x', height);
+            
+            const validation = validateImageDimensions(width, height);
+            
+            if (!validation.isValid) {
+              Alert.alert(
+                'Invalid Image Dimensions',
+                validation.message,
+                [{ text: 'OK' }]
+              );
+              return;
+            }
+            
+            // If validation passes, set the image
+            setSelectedImage(asset);
+            setFileData({
+              uri: asset.uri,
+              type: asset.type || 'image/jpeg',
+              name: asset.fileName || 'photo.jpg',
+            });
+          },
+          (error) => {
+            console.log('Error getting image dimensions:', error);
+            Alert.alert(
+              'Error',
+              'Unable to process the selected image. Please try another image.',
+              [{ text: 'OK' }]
+            );
+          }
+        );
       }
     });
   };
@@ -71,6 +151,22 @@ const CreateRoomScreen = ({navigation}) => {
   };
 
   const handleSubmit = async () => {
+    // Validate required fields
+    if (!form.name.trim()) {
+      Alert.alert('Validation Error', 'Please enter a room name.');
+      return;
+    }
+    
+    if (!form.description.trim()) {
+      Alert.alert('Validation Error', 'Please enter a room description.');
+      return;
+    }
+    
+    if (!fileData) {
+      Alert.alert('Validation Error', 'Please select a room picture.');
+      return;
+    }
+
     const token = await getDataFromStore('token');
     console.log('form', form);
     const payload = {
@@ -108,6 +204,11 @@ const CreateRoomScreen = ({navigation}) => {
       }
     } catch (err) {
       console.log('error', err);
+      Alert.alert(
+        'Error',
+        'Failed to create room. Please try again.',
+        [{ text: 'OK' }]
+      );
     }
   };
 
@@ -136,6 +237,9 @@ const CreateRoomScreen = ({navigation}) => {
           <View style={styles.form}>
             {/* Room Picture */}
             <Text style={styles.label}>Room Picture</Text>
+            <Text style={styles.helperText}>
+              Please select a square image (200x200 to 2000x2000 pixels)
+            </Text>
             <TouchableOpacity style={styles.imageSelector} onPress={selectImage}>
               {selectedImage ? (
                 <Image
@@ -259,6 +363,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginTop: 16,
     marginBottom: 8,
+  },
+  helperText: {
+    color: '#94A3B8',
+    fontSize: 12,
+    marginBottom: 8,
+    fontStyle: 'italic',
   },
   input: {
     backgroundColor: '#1E293B',

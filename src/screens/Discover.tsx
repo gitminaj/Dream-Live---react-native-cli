@@ -14,6 +14,7 @@ import axios from 'axios';
 import {BACKEND_URL, BASE_URL} from '../utils/constant';
 import {UserContext} from '../utils/context/user-context';
 import {getDataFromStore} from '../store';
+import HomeFooter from '../components/HomeFooter';
 
 export default function Discover() {
   const [activeTab, setActiveTab] = useState('discover');
@@ -174,6 +175,7 @@ export default function Discover() {
           </ScrollView>
         )}
       </View>
+      <HomeFooter />
     </>
   );
 }
