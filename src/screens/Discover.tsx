@@ -129,10 +129,7 @@ export default function Discover() {
             showsHorizontalScrollIndicator={false}
             style={styles.contentContainer}>
             {discoverUser.map(user => {
-              const profileUrl = `${BACKEND_URL}/${user?.profile.replace(
-                /\\/g,
-                '/',
-              )}`;
+              const profileUrl = `${user?.profile}`;
               return (
                 <TouchableOpacity
                   onPress={() => handleFollow(user._id)}
@@ -158,10 +155,7 @@ export default function Discover() {
               <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
             }>
             {followingUser.map(user => {
-              const profileUrl = `${BACKEND_URL}/${user?.followingId?.profile?.replace(
-                /\\/g,
-                '/',
-              )}`;
+              const profileUrl = `${user?.followingId?.profile}`;
               return (
                 <TouchableOpacity key={user?._id}>
                   <FollowCard

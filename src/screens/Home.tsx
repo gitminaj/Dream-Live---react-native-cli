@@ -289,7 +289,7 @@ export default function Home() {
                 resizeMode="cover"
                 style={{width: 25, height: 25, borderRadius: 40}}
                 source={{
-                  uri: `${BACKEND_URL}/${user?.profile.replace(/\\/g, '/')}`,
+                  uri: `${user?.profile.replace(/\\/g, '/')}`,
                 }}
               />
             </TouchableOpacity>
@@ -396,10 +396,7 @@ export default function Home() {
           {/* Feed Container */}
           <View style={styles.mainFeedContainer}>
             {feedData?.map((feed, index) => {
-              const image = `${BACKEND_URL}/${feed?.picture?.replace(
-                /\\/g,
-                '/',
-              )}`;
+              const image = `${feed?.picture}`;
               
               // Check if animations exist for this index
               const translateY = feedAnimations[index] || new Animated.Value(0);

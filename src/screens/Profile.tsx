@@ -100,7 +100,7 @@ const handlePostClick = () => {
         <View style={{flexDirection: 'row', justifyContent: 'space-between'}}>
           <View style={styles.profileHeader}>
             <Image
-              source={{ uri: `${BACKEND_URL}/${user?.profile?.replace(/\\/g, '/')}`}}
+              source={{ uri: `${user?.profile}`}}
               style={styles.profileImage}
               defaultSource={require('../assets/profileIcon.png')}
             />

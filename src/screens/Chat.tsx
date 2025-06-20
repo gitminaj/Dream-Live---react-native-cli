@@ -1445,7 +1445,7 @@ export default function ChatScreen() {
               //     : `${BACKEND_URL}/${item?.fileUrl?.replace(/\\/g, '/')}`,
               // }}
               source={{
-                uri: `${BACKEND_URL}/${receiverInfo?.profile.replace(/\\/g, '/')}`,
+                uri: `${receiverInfo?.profile}`,
               }}
               style={styles.attachmentImage}
               resizeMode="cover"
@@ -1459,7 +1459,7 @@ export default function ChatScreen() {
             <View style={styles.videoContainer}>
               <Image
                 source={{
-                  uri: `${BACKEND_URL}/${item?.fileUrl?.replace(/\\/g, '/')}`,
+                  uri: `${item?.fileUrl}`,
                 }}
                 style={styles.attachmentImage}
                 resizeMode="cover"
@@ -1630,7 +1630,7 @@ export default function ChatScreen() {
         <Image
           style={styles.profileImage}
           source={{
-            uri: `${BACKEND_URL}/${receiverInfo?.profile.replace(/\\/g, '/')}`,
+            uri: `${receiverInfo?.profile}`,
           }}
         />
         <View style={{flex: 1}}>
