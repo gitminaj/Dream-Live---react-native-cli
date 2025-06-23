@@ -10,6 +10,7 @@ export const UserContextProvider = ({children}) => {
   const [user, setUser] = useState(  );
   const [followers, setFollowers] = useState();
   const [following, setFollowing] = useState();
+  const [followRequest, setFollowRequest] = useState();
   const [userPost, setUserPost] = useState();
 
   const fetchUser = async () => {
@@ -54,8 +55,21 @@ export const UserContextProvider = ({children}) => {
     }
   };
 
+  const getFollowRequest = async () => {
+    const userData = await AsyncStorage.getItem('user');
+    const {_id} = JSON.parse(userData);
+    try {
+      const response = await axios.get(`${BASE_URL}/follow/getFollowRequests/${_id}`);
+
+      console.log('follow user request', response);
+      setFollowRequest(response?.data?.data);
+      return response?.data?.data;
+    } catch (error) {
+      console.log('error fetching all users', error.response);
+    }
+  };
+
   const fetchUsersPosts = async () => {
-    
     const token = await getDataFromStore('token');
     try {
       const response = await axios.get(`${BASE_URL}/post/get-usersPosts`, {
@@ -78,7 +92,8 @@ export const UserContextProvider = ({children}) => {
       fetchUser(),
       getFollowingUser(),
       getFollowerUser(),
-      fetchUsersPosts()
+      fetchUsersPosts(),
+      getFollowRequest()
     ]);
   };
 
@@ -88,7 +103,7 @@ export const UserContextProvider = ({children}) => {
 
   return (
     <UserContext.Provider
-      value={{user, refreshAllUserData, getFollowingUser, getFollowerUser, followers, following, userPost}}>
+      value={{user, refreshAllUserData, getFollowingUser, getFollowerUser, followers, following, userPost, followRequest}}>
       {children}
     </UserContext.Provider>
   );

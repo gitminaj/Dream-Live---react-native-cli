@@ -19,16 +19,25 @@ const Width = Dimensions.get('window').width;
 const bannerWidth = Width * 0.4;
 
 export default function Followers() {
-  const [followingUser, setFollowingUser] = useState([]);
+  const [activeTab, setActiveTab] = useState('followers');
   const [refreshing, setRefreshing] = useState(false);
   const {
     user: userCon,
     followers,
     following,
     refreshAllUserData,
+    followRequest
   } = useContext(UserContext);
+  const [followingIds, setFollowingIds] = useState(
+    following.map(user => user?.followingId?._id),
+  );
 
-  const [followingIds, setFollowingIds] = useState(following.map(user => user?.followingId?._id));
+  const [followingRequest, setFollowingRequest] = useState(followRequest);
+
+  useEffect(() =>{
+    setFollowingRequest(followRequest);
+  },[refreshAllUserData])
+
 
   //   console.log('following ids', followingIds)
   //   console.log('follower ids', followers)
@@ -50,25 +59,21 @@ export default function Followers() {
 
   console.log('folowing', following);
 
-//   const handleFollow = async followingId => {
-//     const token = await getDataFromStore('token');
-//     const payload = {
-//       followerId: userCon._id,
-//       followingId,
-//     };
-//     try {
-//       const response = await axios.post(`${BASE_URL}/follow/follow`, payload, {
-//         headers: {
-//           Authorization: `Bearer ${token}`,
-//         },
-//       });
-//       console.log('response', response);
-//     } catch (err) {
-//       console.log('error while following', err.response);
-//     }
-//   };
+    const handleAccept = async requesterId => {
+      const token = await getDataFromStore('token');
+      try {
+        const response = await axios.post(`${BASE_URL}/follow/accept`, {requesterId} ,{
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        console.log('response', response);
+      } catch (err) {
+        console.log('error while following', err.response);
+      }
+    };
 
-const handleFollowToggle = async (targetId) => {
+  const handleFollowToggle = async targetId => {
     const token = await getDataFromStore('token');
     const payload = {
       token: token,
@@ -77,32 +82,40 @@ const handleFollowToggle = async (targetId) => {
     };
     try {
       if (isFollowing(targetId)) {
-// un follow logic
+        // un follow logic
         try {
-            const response = await axios.delete(`${BASE_URL}/follow/unfollow`,{data: payload } );
-            console.log('response unfollow', response);
-            setFollowingIds((prev) => prev.filter((id) => id !== targetId));
-          } catch (err) {
-            console.log('error while unfollowing', err.response);
-          }
+          const response = await axios.delete(`${BASE_URL}/follow/unfollow`, {
+            data: payload,
+          });
+          console.log('response unfollow', response);
+          setFollowingIds(prev => prev.filter(id => id !== targetId));
+        } catch (err) {
+          console.log('error while unfollowing', err.response);
+        }
       } else {
         // follow logic
         try {
-                  const response = await axios.post(`${BASE_URL}/follow/follow`, payload, {
-                    headers: {
-                      Authorization: `Bearer ${token}`,
-                    },
-                  });
-                  console.log('response', response);
-                  setFollowingIds((prev) => [...prev, targetId]);
-                } catch (err) {
-                  console.log('error while following', err.response);
-                }
+          const response = await axios.post(
+            `${BASE_URL}/follow/follow`,
+            payload,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            },
+          );
+          console.log('response', response);
+          setFollowingIds(prev => [...prev, targetId]);
+        } catch (err) {
+          console.log('error while following', err.response);
+        }
       }
     } catch (err) {
       console.log('Follow toggle failed', err);
     }
   };
+
+
 
   return (
     <>
@@ -110,7 +123,8 @@ const handleFollowToggle = async (targetId) => {
         <View style={styles.header}>
           <View style={{flexDirection: 'row'}}>
             <TouchableOpacity
-              style={styles.tabButton}>
+              style={styles.tabButton}
+              onPress={() => setActiveTab('followers')}>
               <Text
                 style={{
                   fontSize: 14,
@@ -121,51 +135,129 @@ const handleFollowToggle = async (targetId) => {
                 Followers
               </Text>
             </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.tabButton}
+              onPress={() => setActiveTab('request')}>
+              <Text
+                style={{
+                  fontSize: 14,
+                  color: 'white',
+                  fontWeight: 700,
+                  marginRight: 40,
+                }}>
+                Request's
+              </Text>
+            </TouchableOpacity>
           </View>
           <Icon style={styles.bellIcon} size={20} name="bell" />
         </View>
 
-        <ScrollView
-          horizontal={false}
-          vertical={true}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
-          showsHorizontalScrollIndicator={false}
-          style={styles.contentContainer}>
-          {followers.map(user => {
-            const profileUrl = `${BACKEND_URL}/${user?.followerId?.profile.replace(
-              /\\/g,
-              '/',
-            )}`;
-            return (
-              <View style={styles.discovercontainer} key={user?.followerId?._id}>
-                <View style={styles.header}>
-                  <View style={{flexDirection: 'row'}}>
-                    <Image
-                      style={styles.profileImage}
-                      source={{uri: profileUrl}}
-                    />
+        {activeTab === 'followers' && (
+          <ScrollView
+            horizontal={false}
+            vertical={true}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            }
+            showsHorizontalScrollIndicator={false}
+            style={styles.contentContainer}>
+            <Text
+              style={{
+                fontSize: 14,
+                color: 'white',
+                fontWeight: 700,
+                marginRight: 40,
+              }}>
+              followers
+            </Text>
+            {followers.map(user => {
+              return (
+                <View
+                  style={styles.discovercontainer}
+                  key={user?.followerId?._id}>
+                  <View style={styles.header}>
+                    <View style={{flexDirection: 'row'}}>
+                      <Image
+                        style={styles.profileImage}
+                        source={{uri:  `${user?.followerId?.profile}`}}
+                      />
+                      <View>
+                        <Text style={styles.name}>
+                          {user?.followerId?.name || 'unknow'}
+                        </Text>
+                        {/* <Text style={styles.timestamp}>6 hour ago</Text> */}
+                      </View>
+                    </View>
                     <View>
-                      <Text style={styles.name}>{user?.followerId?.name || 'unknow'}</Text>
-                      <Text style={styles.timestamp}>6 hour ago</Text>
+                      <TouchableOpacity
+                        onPress={() =>
+                          handleFollowToggle(user?.followerId?._id)
+                        }>
+                        <Text style={styles.followBtn}>
+                          {isFollowing(user?.followerId?._id)
+                            ? 'Unfollow'
+                            : 'Follow'}
+                        </Text>
+                      </TouchableOpacity>
                     </View>
                   </View>
-                  <View>
-                    <TouchableOpacity
-                      onPress={() => handleFollowToggle(user?.followerId?._id)}>
-                      <Text style={styles.followBtn}>
-                        {isFollowing(user?.followerId?._id)
-                          ? 'Unfollow'
-                          : 'Follow'}
-                      </Text>
-                    </TouchableOpacity>
+                </View>
+              );
+            })}
+          </ScrollView>
+        )}
+
+        {activeTab === 'request' && (
+          <ScrollView
+            horizontal={false}
+            vertical={true}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            }
+            showsHorizontalScrollIndicator={false}
+            style={styles.contentContainer}>
+            <Text
+              style={{
+                fontSize: 14,
+                color: 'white',
+                fontWeight: 700,
+                marginRight: 40,
+              }}>
+              request
+            </Text>
+            {followingRequest.map(user => {
+              return (
+                <View
+                  style={styles.discovercontainer}
+                  key={user?.profile}>
+                  <View style={styles.header}>
+                    <View style={{flexDirection: 'row'}}>
+                      <Image
+                        style={styles.profileImage}
+                        source={{uri: `${user?.profile}`}}
+                      />
+                      <View>
+                        <Text style={styles.name}>
+                          {user?.name || 'unknow'}
+                        </Text>
+                        {/* <Text style={styles.timestamp}>6 hour ago</Text> */}
+                      </View>
+                    </View>
+                    <View>
+                      <TouchableOpacity
+                        onPress={() =>
+                          handleAccept(user?._id)
+                        }>
+                        <Text style={styles.followBtn}> Accept
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
                   </View>
                 </View>
-              </View>
-            );
-          })}
-        </ScrollView>
+              );
+            })}
+          </ScrollView>
+        )}
       </View>
     </>
   );
