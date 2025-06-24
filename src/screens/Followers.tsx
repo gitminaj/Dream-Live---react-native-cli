@@ -161,15 +161,6 @@ export default function Followers() {
             }
             showsHorizontalScrollIndicator={false}
             style={styles.contentContainer}>
-            <Text
-              style={{
-                fontSize: 14,
-                color: 'white',
-                fontWeight: 700,
-                marginRight: 40,
-              }}>
-              followers
-            </Text>
             {followers.map(user => {
               return (
                 <View
@@ -216,15 +207,7 @@ export default function Followers() {
             }
             showsHorizontalScrollIndicator={false}
             style={styles.contentContainer}>
-            <Text
-              style={{
-                fontSize: 14,
-                color: 'white',
-                fontWeight: 700,
-                marginRight: 40,
-              }}>
-              request
-            </Text>
+
             {followingRequest.map(user => {
               return (
                 <View

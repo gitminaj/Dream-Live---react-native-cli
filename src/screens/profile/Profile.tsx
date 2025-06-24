@@ -10,9 +10,9 @@ import {
   StatusBar,
   RefreshControl, 
 } from 'react-native';
-import {getDataFromStore, removeDataFromStore} from '../store';
+import {getDataFromStore, removeDataFromStore} from '../../store';
 import {useNavigation, CommonActions} from '@react-navigation/native';
-import {UserContext} from '../utils/context/user-context';
+import {UserContext} from '../../utils/context/user-context';
 
 // icons
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -22,10 +22,10 @@ import MainIcon from 'react-native-vector-icons/Feather';
 import Feather from 'react-native-vector-icons/Feather';
 import MaterialCommunityIcon from 'react-native-vector-icons/MaterialCommunityIcons';
 import AntDesign from 'react-native-vector-icons/AntDesign';
-import { BACKEND_URL } from '../utils/constant';
-import MyPosts from './post/MyPosts';
-import { socket } from '../utils/socket';
-import HomeFooter from '../components/HomeFooter';
+
+import MyPosts from '../post/MyPosts';
+import { socket } from '../../utils/socket';
+import HomeFooter from '../../components/HomeFooter';
 
 const MenuItem = ({icon, onPress, title}) => {
   return (
@@ -98,17 +98,19 @@ const handlePostClick = () => {
       >
         {/* Profile Header */}
         <View style={{flexDirection: 'row', justifyContent: 'space-between'}}>
+          <TouchableOpacity onPress={ () => navigation.navigate('EditProfile') }>
           <View style={styles.profileHeader}>
             <Image
               source={{ uri: `${user?.profile}`}}
               style={styles.profileImage}
-              defaultSource={require('../assets/profileIcon.png')}
+              defaultSource={require('../../assets/profileIcon.png')}
             />
             <View>
               <Text style={styles.userName}>{user?.name}</Text>
               {/* <Text style={styles.userId}>ID: {user._id}</Text> */}
             </View>
           </View>
+          </TouchableOpacity>
           <TouchableOpacity onPress={handleLogout}>
             <Feather name="log-out" size={20} color="#8D96A8" />
           </TouchableOpacity>
@@ -142,7 +144,7 @@ const handlePostClick = () => {
           <View style={styles.currencyBox}>
             <View style={styles.currencyIconContainer}>
               <Image
-                source={require('../assets/coin.png')}
+                source={require('../../assets/coin.png')}
                 style={{width: 40, height: 40}}
                 // defaultSource={require('./assets/profile-avatar.png')}
               />
@@ -155,7 +157,7 @@ const handlePostClick = () => {
           <View style={styles.currencyBox}>
             <View style={styles.currencyIconContainer}>
               <Image
-                source={require('../assets/daimond.png')}
+                source={require('../../assets/daimond.png')}
                 style={{width: 30, height: 30}}
                 // defaultSource={require('./assets/profile-avatar.png')}
               />

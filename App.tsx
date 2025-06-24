@@ -15,7 +15,6 @@ import VerifyEmail from './src/screens/auth/VerifyEmail';
 import Home from './src/screens/Home';
 import Discover from './src/screens/Discover';
 import ChatScreen from './src/screens/Chat';
-import Profile from './src/screens/Profile';
 import LiveAudioRoom from './src/screens/LiveAudioRoom';
 import Followers from './src/screens/Followers';
 import Following from './src/screens/Following';
@@ -32,6 +31,8 @@ import ChatRoom from './src/screens/chatRoom/ChatRoom';
 
 import { UserContextProvider } from './src/utils/context/user-context';
 import CreateChatRoom from './src/screens/chatRoom/CreateChatRoom';
+import Profile from './src/screens/profile/Profile';
+import EditProfile from './src/screens/profile/EditProfile';
 // import { streamClient } from './src/utils/streamClient';
 
 
@@ -57,6 +58,7 @@ function App(): React.JSX.Element {
               <Stack.Screen name="VerifyEmail" component={VerifyEmail} />
               <Stack.Screen name="Chat" component={ChatScreen} />
               <Stack.Screen name="Profile" component={Profile} />
+              <Stack.Screen name="EditProfile" component={EditProfile} />
               <Stack.Screen name="LiveAudioRoom" component={LiveAudioRoom} />
               <Stack.Screen name="Followers" component={Followers} />
               <Stack.Screen name="Following" component={Following} />

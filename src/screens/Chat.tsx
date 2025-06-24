@@ -1700,7 +1700,7 @@ export default function ChatScreen() {
           multiline
         />
 
-        <TouchableOpacity
+        {/* <TouchableOpacity
           onPress={showAttachmentModalWithAnimation}
           style={styles.attachmentIconButton}
           disabled={isUploading}>
@@ -1709,7 +1709,7 @@ export default function ChatScreen() {
             size={24}
             color={isUploading ? '#ccc' : '#D4ACFB'}
           />
-        </TouchableOpacity>
+        </TouchableOpacity> */}
 
         <TouchableOpacity
           onPress={sendMessage}
