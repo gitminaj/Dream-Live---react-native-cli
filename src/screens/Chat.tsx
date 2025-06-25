@@ -1437,7 +1437,7 @@ export default function ChatScreen() {
           {/* Render attachment if present */}
           {item.messageType === 'image' && item?.fileUrl && (
             <>
-            {console.log('here')}
+            {/* {console.log('here')} */}
             <Image
               // source={{
               //   uri: item.fileUrl.startsWith('http')

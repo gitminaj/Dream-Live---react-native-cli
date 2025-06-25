@@ -65,10 +65,7 @@ const MessageList = () => {
       style={styles.chatItem}
       onPress={() => navigation.navigate('Chat', {roomId: item?._id , receiverUserId: users[0]?._id , roomDetails:{ data: item}})}>
       <Image source={{
-                  uri: `${BACKEND_URL}/${users[0]?.profile?.replace(
-                    /\\/g,
-                    "/"
-                  )}`,
+                  uri: `${users[0]?.profile}`,
                 }} style={styles.avatar} />
       <View style={styles.chatInfo}>
         <Text style={styles.chatName}>{users[0]?.name}</Text>

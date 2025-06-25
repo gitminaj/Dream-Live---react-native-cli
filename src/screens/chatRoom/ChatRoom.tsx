@@ -357,7 +357,7 @@ const LiveChatRoom = ({ navigation, route }) => {
       <Image
         source={{
           uri: item.profile 
-            ? `${BACKEND_URL}/${item.profile.replace(/\\/g, '/')}`
+            ? `${item.profile.replace(/\\/g, '/')}`
             : 'https://via.placeholder.com/40'
         }}
         style={[
@@ -369,68 +369,75 @@ const LiveChatRoom = ({ navigation, route }) => {
     </View>
   );
 
-  const renderMessage = ({ item, index }) => {
-    if (item.messageType === 'system') {
-      return (
-        <View style={styles.systemMessage}>
-          <Text style={styles.systemMessageText}>{item.content}</Text>
-        </View>
-      );
-    }
-
-    const isOwnMessage = item.sender?._id === userId;
-    const senderName = isOwnMessage ? 'You' : (item.sender?.name || 'Unknown');
-    
-    // Show sender name only if it's different from previous message sender
-    const previousMessage = messages[index - 1];
-    const showSenderName = !previousMessage || 
-      previousMessage.messageType === 'system' ||
-      previousMessage.sender?._id !== item.sender?._id;
-
-      console.log('item', item)
-
+const renderMessage = ({ item, index }) => {
+  if (item.messageType === 'system') {
     return (
-      <View style={styles.messageWrapper}>
-        <View style={styles.messageContainer}>
-          <View style={styles.messageHeader}>
+      <View style={styles.systemMessage}>
+        <Text style={styles.systemMessageText}>{item.content}</Text>
+      </View>
+    );
+  }
+
+  const isOwnMessage = item.sender?._id === userId;
+  const senderName = isOwnMessage ? 'You' : (item.sender?.name || 'Unknown');
+  
+  // Show sender name and avatar only if it's different from previous message sender
+  const previousMessage = messages[index - 1];
+  const showSenderInfo = !previousMessage || 
+    previousMessage.messageType === 'system' ||
+    previousMessage.sender?._id !== item.sender?._id;
+
+  console.log('item', item)
+
+  return (
+    <View style={styles.messageWrapper}>
+      <View style={styles.messageContainer}>
+        <View style={styles.messageHeader}>
+          {/* Only show avatar if this is the first message from this sender in sequence */}
+          {showSenderInfo && (
             <Image
               source={{
                 uri: item.sender?.profile 
-                  ? `${BACKEND_URL}/${item?.sender?.profile.replace(/\\/g, '/')}`
+                  ? `${item?.sender?.profile.replace(/\\/g, '/')}`
                   : 'https://via.placeholder.com/32'
               }}
               style={styles.messageSenderAvatar}
             />
-            <View style={styles.messageContent}>
-              {showSenderName && (
-                <Text style={[
-                  styles.senderName,
-                  { color: isOwnMessage ? '#4A90E2' : '#FF6B6B' }
-                ]}>
-                  {senderName}
-                </Text>
-              )}
-              <View style={[
-                styles.messageBubble,
-                item.isTemp && styles.tempMessage
+          )}
+          <View style={[
+            styles.messageContent,
+            // Add margin to align with messages that have avatars
+            !showSenderInfo && { marginLeft: 40 } // Adjust this value to match your avatar width + margin
+          ]}>
+            {showSenderInfo && (
+              <Text style={[
+                styles.senderName,
+                { color: isOwnMessage ? '#4A90E2' : '#FF6B6B' }
               ]}>
-                <Text style={styles.messageText}>{item.content}</Text>
-              </View>
-              <Text style={styles.messageTime}>
-                {new Date(item.createdAt).toLocaleTimeString([], { 
-                  hour: '2-digit', 
-                  minute: '2-digit' 
-                })}
-                {item.isTemp && (
-                  <Text style={styles.sendingIndicator}> • Sending...</Text>
-                )}
+                {senderName}
               </Text>
+            )}
+            <View style={[
+              styles.messageBubble,
+              item.isTemp && styles.tempMessage
+            ]}>
+              <Text style={styles.messageText}>{item.content}</Text>
             </View>
+            <Text style={styles.messageTime}>
+              {new Date(item.createdAt).toLocaleTimeString([], { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+              })}
+              {item.isTemp && (
+                <Text style={styles.sendingIndicator}> • Sending...</Text>
+              )}
+            </Text>
           </View>
         </View>
       </View>
-    );
-  };
+    </View>
+  );
+};
 
   return (
     <View style={styles.container}>
@@ -440,7 +447,7 @@ const LiveChatRoom = ({ navigation, route }) => {
           <Image
             source={{
               uri: chatRoom?.picture 
-                ? `${BACKEND_URL}/${chatRoom.picture.replace(/\\/g, '/')}`
+                ? `${chatRoom.picture.replace(/\\/g, '/')}`
                 : 'https://via.placeholder.com/40'
             }}
             style={styles.avatar}

@@ -60,7 +60,7 @@ const EditProfile = ({ navigation }) => {
       }
 
       console.log('formdata edit profle',formData )
-
+      
       // Replace with your actual API endpoint
       const response = await axios.put(
         `${BACKEND_URL}/api/v1/auth/profile/${user?._id}`,
@@ -73,6 +73,9 @@ const EditProfile = ({ navigation }) => {
           },
         }
       );
+      
+      console.log('formdata edit profle resp',response )
+
 
       if (response.data.success) {
         // Update user context with new data
