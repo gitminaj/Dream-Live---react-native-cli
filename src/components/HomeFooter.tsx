@@ -23,14 +23,14 @@ export default function HomeFooter() {
           <Text style={styles.footerText}>Home</Text>
         </TouchableOpacity>
         
-        <View>
+        <TouchableOpacity onPress={() => navigation.navigate('HomeScreen')}>
           <Image
             resizeMode="contain"
             style={{ width: 25, height: 25 }}
             source={require("../assets/dice.png")}
           />
           <Text style={styles.footerText}>Games</Text>
-         </View>
+         </TouchableOpacity>
         
         <TouchableOpacity onPress={handlePostPress}>
           <Feather name='plus-circle' style={{  color: 'white' }} size={30} />

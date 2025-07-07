@@ -26,7 +26,7 @@ export default function Followers() {
     followers,
     following,
     refreshAllUserData,
-    followRequest
+    followRequest,
   } = useContext(UserContext);
   const [followingIds, setFollowingIds] = useState(
     following.map(user => user?.followingId?._id),
@@ -34,10 +34,9 @@ export default function Followers() {
 
   const [followingRequest, setFollowingRequest] = useState(followRequest);
 
-  useEffect(() =>{
+  useEffect(() => {
     setFollowingRequest(followRequest);
-  },[refreshAllUserData])
-
+  }, [refreshAllUserData]);
 
   //   console.log('following ids', followingIds)
   //   console.log('follower ids', followers)
@@ -59,19 +58,29 @@ export default function Followers() {
 
   console.log('folowing', following);
 
-    const handleAccept = async requesterId => {
-      const token = await getDataFromStore('token');
-      try {
-        const response = await axios.post(`${BASE_URL}/follow/accept`, {requesterId} ,{
+  const handleAccept = async requesterId => {
+    const token = await getDataFromStore('token');
+    try {
+      const response = await axios.post(
+        `${BASE_URL}/follow/accept`,
+        {requesterId},
+        {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        });
-        console.log('response', response);
-      } catch (err) {
-        console.log('error while following', err.response);
-      }
-    };
+        },
+      );
+      console.log('response', response);
+
+       setFollowingRequest(prev =>
+      prev.map(user =>
+        user._id === requesterId ? { ...user, __accepted: true } : user
+      )
+    );
+    } catch (err) {
+      console.log('error while following', err.response);
+    }
+  };
 
   const handleFollowToggle = async targetId => {
     const token = await getDataFromStore('token');
@@ -114,8 +123,6 @@ export default function Followers() {
       console.log('Follow toggle failed', err);
     }
   };
-
-
 
   return (
     <>
@@ -170,7 +177,7 @@ export default function Followers() {
                     <View style={{flexDirection: 'row'}}>
                       <Image
                         style={styles.profileImage}
-                        source={{uri:  `${user?.followerId?.profile}`}}
+                        source={{uri: `${user?.followerId?.profile}`}}
                       />
                       <View>
                         <Text style={styles.name}>
@@ -207,12 +214,9 @@ export default function Followers() {
             }
             showsHorizontalScrollIndicator={false}
             style={styles.contentContainer}>
-
             {followingRequest.map(user => {
               return (
-                <View
-                  style={styles.discovercontainer}
-                  key={user?.profile}>
+                <View style={styles.discovercontainer} key={user?.profile}>
                   <View style={styles.header}>
                     <View style={{flexDirection: 'row'}}>
                       <Image
@@ -228,10 +232,10 @@ export default function Followers() {
                     </View>
                     <View>
                       <TouchableOpacity
-                        onPress={() =>
-                          handleAccept(user?._id)
-                        }>
-                        <Text style={styles.followBtn}> Accept
+                        onPress={() => handleAccept(user?._id)}
+                        disabled={user.__accepted}>
+                        <Text style={styles.followBtn}>
+                          {user.__accepted ? 'Accepted' : 'Accept'}
                         </Text>
                       </TouchableOpacity>
                     </View>

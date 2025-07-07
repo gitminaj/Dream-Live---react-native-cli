@@ -1,6 +1,17 @@
 {
   "extends": "@react-native/typescript-config/tsconfig.json",
   "compilerOptions": {
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "baseUrl": "./",
+    "paths": {
+      "$assets/*": ["src/assets/*"],
+      "$redux/*": ["src/redux/*"],
+      "$screens/*": ["src/screens/ludo/*"],
+      "$constants/*": ["src/constants/*"],
+      "$helpers/*": ["src/helpers/*"],
+      "$components/*": ["src/components/ludo/*"],
+      "$hooks/*": ["src/hooks/*"],
+      "$navigation/*": ["src/navigation/*"],
+    },
   }
 }

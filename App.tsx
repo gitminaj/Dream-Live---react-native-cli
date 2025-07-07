@@ -35,47 +35,66 @@ import Profile from './src/screens/profile/Profile';
 import EditProfile from './src/screens/profile/EditProfile';
 // import { streamClient } from './src/utils/streamClient';
 
+// ludo
+import LudoBoardScreen from './src/screens/ludo/LudoBoardScreen';
+import SplashScreen from './src/screens/ludo/SplashScreen';
+import HomeScreen from './src/screens/ludo/HomeScreen';
+
+
+import { Provider } from 'react-redux';
+import { persistor, store } from '$redux/store';
+import { PersistGate } from 'redux-persist/integration/react';
+
 
 const Stack = createNativeStackNavigator();
 
 function App(): React.JSX.Element {
   return (
-    <GestureHandlerRootView>
+    
+    <Provider store={store}>
+      <PersistGate loading={null} persistor={persistor}>
+        <GestureHandlerRootView>
 
-    <UserContextProvider>
-      {/* <OverlayProvider>
-        <Chat client={streamClient}> */}
-          <NavigationContainer theme={DarkTheme} >
-            <Stack.Navigator screenOptions={{ headerShown: false }} >
-              <Stack.Screen name="Welcome" component={Welcome} />
-              <Stack.Screen name="Third" component={Third} />
-              <Stack.Screen name="OnBoarding" component={OnBoarding} />
-              <Stack.Screen name="OnBoardingSlider" component={OnBoardingSlider} />
-              <Stack.Screen name="Register" component={Register} />
-              <Stack.Screen name="Login" component={Login} />
-              <Stack.Screen name="Home" component={Home} />
-              <Stack.Screen name="Discover" component={Discover} />
-              <Stack.Screen name="VerifyEmail" component={VerifyEmail} />
-              <Stack.Screen name="Chat" component={ChatScreen} />
-              <Stack.Screen name="Profile" component={Profile} />
-              <Stack.Screen name="EditProfile" component={EditProfile} />
-              <Stack.Screen name="LiveAudioRoom" component={LiveAudioRoom} />
-              <Stack.Screen name="Followers" component={Followers} />
-              <Stack.Screen name="Following" component={Following} />
-              <Stack.Screen name="MessageList" component={MessageList} />
-              <Stack.Screen name="VipRules" component={VipRules} />
-              <Stack.Screen name="VipDetails" component={VipDetails} />
-              <Stack.Screen name="CreatePost" component={CreatePost} />
-              <Stack.Screen name="PostsScreen" component={PostsScreen} />
-              <Stack.Screen name="UpdatePost" component={UpdatePost} />
-              <Stack.Screen name="MyPosts" component={MyPosts} />
-              <Stack.Screen name="CustomGallery" component={CustomGallery} />
-              <Stack.Screen name="CreateChatRoom" component={CreateChatRoom} />
-              <Stack.Screen name="ChatRoom" component={ChatRoom} />
-            </Stack.Navigator>
-          </NavigationContainer>
-    </UserContextProvider>
-    </GestureHandlerRootView>
+        <UserContextProvider>
+          {/* <OverlayProvider>
+            <Chat client={streamClient}> */}
+              <NavigationContainer theme={DarkTheme} >
+                <Stack.Navigator screenOptions={{ headerShown: false }} >
+                  <Stack.Screen name="Welcome" component={Welcome} />
+                  <Stack.Screen name="Third" component={Third} />
+                  <Stack.Screen name="OnBoarding" component={OnBoarding} />
+                  <Stack.Screen name="OnBoardingSlider" component={OnBoardingSlider} />
+                  <Stack.Screen name="Register" component={Register} />
+                  <Stack.Screen name="Login" component={Login} />
+                  <Stack.Screen name="Home" component={Home} />
+                  <Stack.Screen name="Discover" component={Discover} />
+                  <Stack.Screen name="VerifyEmail" component={VerifyEmail} />
+                  <Stack.Screen name="Chat" component={ChatScreen} />
+                  <Stack.Screen name="Profile" component={Profile} />
+                  <Stack.Screen name="EditProfile" component={EditProfile} />
+                  <Stack.Screen name="LiveAudioRoom" component={LiveAudioRoom} />
+                  <Stack.Screen name="Followers" component={Followers} />
+                  <Stack.Screen name="Following" component={Following} />
+                  <Stack.Screen name="MessageList" component={MessageList} />
+                  <Stack.Screen name="VipRules" component={VipRules} />
+                  <Stack.Screen name="VipDetails" component={VipDetails} />
+                  <Stack.Screen name="CreatePost" component={CreatePost} />
+                  <Stack.Screen name="PostsScreen" component={PostsScreen} />
+                  <Stack.Screen name="UpdatePost" component={UpdatePost} />
+                  <Stack.Screen name="MyPosts" component={MyPosts} />
+                  <Stack.Screen name="CustomGallery" component={CustomGallery} />
+                  <Stack.Screen name="CreateChatRoom" component={CreateChatRoom} />
+                  <Stack.Screen name="ChatRoom" component={ChatRoom} />
+                  {/* ludo */}
+                  <Stack.Screen name='SplashScreen' component={SplashScreen} />
+                <Stack.Screen name='HomeScreen' component={HomeScreen} />
+                <Stack.Screen name='LudoBoardScreen' component={LudoBoardScreen} />
+                </Stack.Navigator>
+              </NavigationContainer>
+        </UserContextProvider>
+        </GestureHandlerRootView>
+      </PersistGate>
+    </Provider>
 
   );
 }

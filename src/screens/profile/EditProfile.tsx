@@ -203,7 +203,7 @@ const EditProfile = ({ navigation }) => {
         <View style={styles.formContainer}>
           {/* First Name */}
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>First Name*</Text>
+            <Text style={styles.label}> Name</Text>
             <TextInput
               style={styles.input}
               value={firstName}

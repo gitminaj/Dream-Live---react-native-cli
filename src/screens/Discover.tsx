@@ -131,15 +131,18 @@ export default function Discover() {
             {discoverUser.map(user => {
               const profileUrl = `${user?.profile}`;
               return (
-                <TouchableOpacity
-                  onPress={() => handleFollow(user._id)}
-                  key={user._id}>
+                // <TouchableOpacity
+                //   // onPress={() => handleFollow(user._id)}
+                //   >
                   <DiscoverCard
+                    key={user._id}
                     id={user?._id}
                     name={user?.name}
                     image={String(profileUrl)}
+                    isPrivate={user.isPrivate}
+  isRequested={user.followRequests.includes(userCon._id)}
                   />
-                </TouchableOpacity>
+                // </TouchableOpacity>
               );
             })}
           </ScrollView>

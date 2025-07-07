@@ -89,6 +89,7 @@ const handlePostClick = () => {
   };
 
   return (
+    <>
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#1A202C" />
       <ScrollView contentContainerStyle={styles.scrollContainer}
@@ -281,8 +282,9 @@ const handlePostClick = () => {
        
         
       </ScrollView>
-       <HomeFooter />
     </SafeAreaView>
+       <HomeFooter />
+    </>
   );
 };
 

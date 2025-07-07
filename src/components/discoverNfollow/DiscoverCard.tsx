@@ -8,18 +8,21 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import {UserContext} from '../../utils/context/user-context';
-import { getDataFromStore } from '../../store';
+import {getDataFromStore} from '../../store';
 import axios from 'axios';
-import { BASE_URL } from '../../utils/constant';
+import {BASE_URL} from '../../utils/constant';
 
 const Width = Dimensions.get('window').width;
 const bannerWidth = Width * 0.4;
 
-export default function DiscoverCard({name, image, id}) {
-  const {
-    following,
-    user: userCon,
-  } = useContext(UserContext);
+export default function DiscoverCard({
+  name,
+  image,
+  id,
+  isPrivate,
+  isRequested,
+}) {
+  const {following, user: userCon} = useContext(UserContext);
 
   const [followingIds, setFollowingIds] = useState(
     following.map(user => user?.followingId?._id),
@@ -62,7 +65,9 @@ export default function DiscoverCard({name, image, id}) {
             },
           );
           console.log('response', response);
-          setFollowingIds(prev => [...prev, targetId]);
+          if (!isPrivate) {
+            setFollowingIds(prev => [...prev, targetId]);
+          }
         } catch (err) {
           console.log('error while following', err.response);
         }
@@ -71,6 +76,13 @@ export default function DiscoverCard({name, image, id}) {
       console.log('Follow toggle failed', err);
     }
   };
+
+  let followText = 'Follow';
+  if (isFollowing(id)) {
+    followText = 'Unfollow';
+  } else if (isRequested) {
+    followText = 'Requested';
+  }
 
   return (
     <View style={styles.discovercontainer}>
@@ -82,36 +94,12 @@ export default function DiscoverCard({name, image, id}) {
             <Text style={styles.timestamp}>6 hour ago</Text>
           </View>
         </View>
-        <TouchableOpacity onPress={() => handleFollowToggle(id)}>
-          <Text style={styles.followBtn}>
-            {isFollowing(id) ? 'Unfollow' : 'Follow'}
-          </Text>
+        <TouchableOpacity
+          onPress={() => handleFollowToggle(id)}
+          disabled={followText === 'Requested'}>
+          <Text style={styles.followBtn}>{followText}</Text>
         </TouchableOpacity>
       </View>
-
-      {/* <Image
-        style={styles.mainBanner}
-        resizeMode="cover"
-        source={image}
-      />
-
-      <View style={styles.iconRow}>
-        <Image
-          style={styles.icon}
-          source={require("../../assets/discoverLike.png")}
-          resizeMode="contain"
-        />
-        <Image
-          style={styles.icon}
-          source={require("../../assets/discoverMsg.png")}
-          resizeMode="contain"
-        />
-        <Image
-          style={styles.icon}
-          source={require("../../assets/discoverGift.png")}
-          resizeMode="contain"
-        />
-      </View> */}
     </View>
   );
 }

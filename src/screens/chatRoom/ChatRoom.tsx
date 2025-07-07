@@ -65,7 +65,7 @@ const LiveChatRoom = ({ navigation, route }) => {
   useEffect(() => {
     const backAction = () => {
       handleLeaveRoom();
-      return true; // Prevent default back action
+      return true; 
     };
 
     const backHandler = BackHandler.addEventListener(
@@ -234,7 +234,6 @@ const LiveChatRoom = ({ navigation, route }) => {
       Alert.alert('Error', error.message || 'Connection error');
     };
 
-    // Add event listeners
     socket.on('connect', handleConnect);
     socket.on('authenticated', handleAuthenticated);
     socket.on('joinedRoom', handleJoinedRoom);
@@ -249,7 +248,6 @@ const LiveChatRoom = ({ navigation, route }) => {
     socket.on('error', handleError);
 
     return () => {
-      // Remove event listeners
       socket.off('connect', handleConnect);
       socket.off('authenticated', handleAuthenticated);
       socket.off('joinedRoom', handleJoinedRoom);
@@ -263,7 +261,6 @@ const LiveChatRoom = ({ navigation, route }) => {
       socket.off('disconnect', handleDisconnect);
       socket.off('error', handleError);
       
-      // Leave room when component unmounts
       if (socket) {
         socket.emit('leaveRoom', { chatRoomId });
       }
@@ -406,8 +403,7 @@ const renderMessage = ({ item, index }) => {
           )}
           <View style={[
             styles.messageContent,
-            // Add margin to align with messages that have avatars
-            !showSenderInfo && { marginLeft: 40 } // Adjust this value to match your avatar width + margin
+            !showSenderInfo && { marginLeft: 40 } 
           ]}>
             {showSenderInfo && (
               <Text style={[
@@ -489,7 +485,7 @@ const renderMessage = ({ item, index }) => {
           keyExtractor={(item) => item._id}
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.participantsList}
-          extraData={onlineParticipants} // Force re-render when participants change
+          extraData={onlineParticipants} 
         />
       </View>
 

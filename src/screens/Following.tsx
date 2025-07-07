@@ -134,7 +134,7 @@ const handleFollowToggle = async (targetId) => {
           showsHorizontalScrollIndicator={false}
           style={styles.contentContainer}>
           {following.map(user => {
-            const profileUrl = `${BACKEND_URL}/${user?.followingId?.profile.replace(
+            const profileUrl = `${user?.followingId?.profile.replace(
               /\\/g,
               '/',
             )}`;

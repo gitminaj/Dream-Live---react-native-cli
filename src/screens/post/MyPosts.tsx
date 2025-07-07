@@ -57,7 +57,7 @@ const MyPosts = () => {
 const renderMedia = (feed) => {
   if (!feed?.postUrl) return null;
 
-  const mediaUrl = feed.postUrl.startsWith('http') 
+  const mediaUrl = feed.postUrl.startsWith('https') 
     ? feed.postUrl.replace(/\\/g, '/')
     : `${BACKEND_URL}/${feed.postUrl.replace(/\\/g, '/')}`;
 

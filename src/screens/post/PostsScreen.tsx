@@ -12,7 +12,7 @@ import {
   Alert,
 } from 'react-native';
 import axios from 'axios';
-import {BACKEND_URL, BASE_URL} from '../../utils/constant';
+import {BASE_URL} from '../../utils/constant';
 import {getDataFromStore} from '../../store';
 import LinearGradient from 'react-native-linear-gradient';
 import Video from 'react-native-video';
@@ -48,7 +48,7 @@ const PostsScreen = ({navigation}) => {
       // Initialize playingVideos state with all videos paused
       const initialPlayState = {};
       postsData.forEach(post => {
-        if (isVideoFile(`${BACKEND_URL}/${post?.postUrl?.replace(/\\/g, '/')}`)) {
+        if (isVideoFile(`${post?.postUrl?.replace(/\\/g, '/')}`)) {
           initialPlayState[post._id] = false; // all videos start paused
         }
       });
@@ -135,9 +135,9 @@ const PostsScreen = ({navigation}) => {
 
   // Render each post item
 const renderPostItem = ({item}) => {
-  const isVideo = isVideoFile(`${BACKEND_URL}/${item?.postUrl?.replace(/\\/g, '/')}`);
+  const isVideo = isVideoFile(`${item?.postUrl?.replace(/\\/g, '/')}`);
   const isPlaying = playingVideos[item._id] || false;
-  const videoUrl = `${BACKEND_URL}/${item?.postUrl?.replace(/\\/g, '/')}`;
+  const videoUrl = `${item?.postUrl?.replace(/\\/g, '/')}`;
   
   return (
     <View style={styles.postContainer}>
