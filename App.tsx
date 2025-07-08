@@ -45,6 +45,10 @@ import { Provider } from 'react-redux';
 import { persistor, store } from '$redux/store';
 import { PersistGate } from 'redux-persist/integration/react';
 
+// agency
+import AgencyRegister from './src/screens/agency/Register';
+import CreateHost from './src/screens/agency/CreateHost';
+
 
 const Stack = createNativeStackNavigator();
 
@@ -89,6 +93,10 @@ function App(): React.JSX.Element {
                   <Stack.Screen name='SplashScreen' component={SplashScreen} />
                 <Stack.Screen name='HomeScreen' component={HomeScreen} />
                 <Stack.Screen name='LudoBoardScreen' component={LudoBoardScreen} />
+
+                {/* agency */}
+                <Stack.Screen name='AgencyRegister' component={AgencyRegister} />
+                <Stack.Screen name='CreateHost' component={CreateHost} />
                 </Stack.Navigator>
               </NavigationContainer>
         </UserContextProvider>

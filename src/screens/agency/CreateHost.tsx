@@ -19,14 +19,14 @@ import axios from 'axios';
 import { UserContext } from '../../utils/context/user-context';
 import { BACKEND_URL } from '../../utils/constant';
 
-const EditProfile = ({ navigation }) => {
+const CreateHost = ({ navigation }) => {
   const { user, setUser } = useContext(UserContext);
   const [firstName, setFirstName] = useState(user?.name || '');
   const [dateOfBirth, setDateOfBirth] = useState(user?.dateOfBirth ? new Date(user.dateOfBirth) : new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedGender, setSelectedGender] = useState(user?.gender || '');
   const [isPrivateAccount, setIsPrivateAccount] = useState(user?.isPrivate || false);
-  const [profileImage, setProfileImage] = useState(user?.profile || '');
+  const [profileImage, setProfileImage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   console.log('usr edit profile', user);
@@ -240,7 +240,7 @@ const EditProfile = ({ navigation }) => {
         <TouchableOpacity onPress={handleBack} style={styles.backButton}>
           <Icon name="chevron-back" size={24} color="#ffffff" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Edit Profile</Text>
+        <Text style={styles.headerTitle}>Create Host Center</Text>
         <View style={styles.placeholder} />
       </View>
 
@@ -249,10 +249,22 @@ const EditProfile = ({ navigation }) => {
         <View style={styles.avatarSection}>
           <TouchableOpacity onPress={handleAvatarPress} style={styles.avatarContainer}>
             <View style={styles.avatar}>
+              {profileImage ? (
               <Image
                 source={{ uri: profileImage }}
                 style={styles.avatarImage}
               />
+            //   <Image source={profileImage} style={profileStyles.profileImage} />
+            ) : (
+              <View style={styles.profilePlaceholder}>
+                <Text style={{color: '#8C8C8C', alignSelf: 'center'}}>
+                  Center
+                </Text>
+                <Text style={{color: '#8C8C8C', alignSelf: 'center'}}>
+                  Logo
+                </Text>
+              </View>
+            )}
               <View style={styles.editIconContainer}>
                 <Icon name="pencil" size={16} color="#1a1a2e" />
               </View>
@@ -264,10 +276,10 @@ const EditProfile = ({ navigation }) => {
         <View style={styles.formContainer}>
           {/* First Name */}
           <View style={styles.inputGroup}>
-            <Text style={styles.label}> Name</Text>
+            <Text style={styles.label}>Host Center Name</Text>
             <TextInput
               style={styles.input}
-              value={firstName}
+            //   value={firstName}
               onChangeText={setFirstName}
               placeholder="Enter first name"
               placeholderTextColor="#666"
@@ -275,83 +287,34 @@ const EditProfile = ({ navigation }) => {
             />
           </View>
 
-          {/* Date of Birth */}
+          {/* Description */}
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Date of Birth</Text>
-            <TouchableOpacity 
-              style={styles.input} 
-              onPress={showDatepicker}
-              disabled={isLoading}
-            >
-              <Text style={[styles.inputText, { color: '#fff' }]}>
-                {formatDate(dateOfBirth)}
-              </Text>
-            </TouchableOpacity>
-            {showDatePicker && (
-              <DateTimePicker
-                testID="dateTimePicker"
-                value={dateOfBirth}
-                mode="date"
-                is24Hour={true}
-                display="default"
-                onChange={onDateChange}
-                maximumDate={new Date()}
-              />
-            )}
+            <Text style={styles.label}>Description</Text>
+            <TextInput
+              style={[styles.input, { height: 120, textAlignVertical: 'top' }]}
+            //   value={firstName}
+              onChangeText={setFirstName}
+              placeholder="Enter first name"
+              placeholderTextColor="#666"
+              multiline
+              editable={!isLoading}
+            />
           </View>
 
-          {/* Gender */}
+          {/* First Name */}
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Gender</Text>
-            <View style={styles.genderContainer}>
-              <TouchableOpacity
-                style={styles.genderOption}
-                onPress={() => !isLoading && setSelectedGender('Male')}
-                disabled={isLoading}
-              >
-                <View style={styles.radioButton}>
-                  {selectedGender === 'Male' && <View style={styles.radioButtonSelected} />}
-                </View>
-                <Text style={styles.genderText}>Male</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.genderOption}
-                onPress={() => !isLoading && setSelectedGender('Female')}
-                disabled={isLoading}
-              >
-                <View style={styles.radioButton}>
-                  {selectedGender === 'Female' && <View style={styles.radioButtonSelected} />}
-                </View>
-                <Text style={styles.genderText}>Female</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.genderOption}
-                onPress={() => !isLoading && setSelectedGender('Other')}
-                disabled={isLoading}
-              >
-                <View style={styles.radioButton}>
-                  {selectedGender === 'Other' && <View style={styles.radioButtonSelected} />}
-                </View>
-                <Text style={styles.genderText}>Other</Text>
-              </TouchableOpacity>
-            </View>
+            <Text style={styles.label}>Add New Host</Text>
+            <TextInput
+              style={styles.input}
+            //   value={firstName}
+              onChangeText={setFirstName}
+              placeholder="Enter first name"
+              placeholderTextColor="#666"
+              editable={!isLoading}
+            />
           </View>
 
-          {/* Private Account */}
-          <View style={styles.inputGroup}>
-            <TouchableOpacity
-              style={styles.checkboxContainer}
-              onPress={() => !isLoading && setIsPrivateAccount(!isPrivateAccount)}
-              disabled={isLoading}
-            >
-              <View style={styles.checkbox}>
-                {isPrivateAccount && <Icon name="checkmark" size={16} color="#c77dff" />}
-              </View>
-              <Text style={styles.checkboxLabel}>Private Account</Text>
-            </TouchableOpacity>
-          </View>
+
         </View>
       </ScrollView>
 
@@ -439,7 +402,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 16,
-    color: '#ffffff',
+    color: '#94A3B8',
     marginBottom: 8,
     fontWeight: '500',
   },
@@ -530,6 +493,17 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#1a1a2e',
   },
+  profilePlaceholder:{
+    width: 100,
+    height: 100,
+    borderRadius: 40,
+    backgroundColor: '#1E2533',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#2D3748',
+    // marginRight: 15,
+  }
 });
 
-export default EditProfile;
+export default CreateHost;
