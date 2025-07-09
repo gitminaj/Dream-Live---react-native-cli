@@ -568,6 +568,11 @@ export default function AgencyRegister() {
           style={styles.loginText}>
           <Text style={{color: '#94A3B8'}}>CreateHost</Text>
         </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => navigation.navigate('HostStreaming')}
+          style={styles.loginText}>
+          <Text style={{color: '#94A3B8'}}>Host streaming</Text>
+        </TouchableOpacity>
       </View>
     </>
   );
