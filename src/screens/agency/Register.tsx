@@ -35,7 +35,7 @@ import FontAwesome from 'react-native-vector-icons/FontAwesome';
 
 import {InputWithIcon} from '../../components/InputWithIcon';
 
-export default function AgencyRegister() {
+export default function AgencyRegister({navigation}) {
   const colorScheme = useColorScheme();
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState({
@@ -46,18 +46,20 @@ export default function AgencyRegister() {
     phone: false,
     password: false,
   });
-  const navigation = useNavigation();
-  const [showDatePicker, setShowDatePicker] = useState(false);
   const [profileImage, setProfileImage] = useState(null);
-  const [showPassword, setShowPassword] = useState(false);
 
   const [form, setForm] = useState({
     name: '',
+    agencyName: '',
+    appID: '',
     email: '',
+    number: '',
     gender: '',
-    dateOfBirth: '',
-    phone: '',
-    password: '',
+    idProofName: '',
+    agencyIdProofFile: '',
+    agencyLogo: '',
+    accountNumber: '',
+    IFSC: '',
   });
 
   // Separate state for file data that won't be part of the initial form submission
@@ -70,11 +72,6 @@ export default function AgencyRegister() {
     if (fieldErrors[fieldName]) {
       setFieldErrors({...fieldErrors, [fieldName]: false});
     }
-
-    // Clear password error when user changes password
-    if (fieldName === 'password' && error) {
-      setError('');
-    }
   };
 
   const handleSubmit = async () => {
@@ -82,11 +79,16 @@ export default function AgencyRegister() {
     setError('');
     setFieldErrors({
       name: false,
+      agencyName: false,
+      appID: false,
       email: false,
+      number: false,
       gender: false,
-      dateOfBirth: false,
-      phone: false,
-      password: false,
+      idProofName: false,
+      agencyIdProofFile: false,
+      agencyLogo: false,
+      accountNumber: false,
+      IFSC: false,
     });
 
     const result = registerSchema.safeParse(form);
@@ -94,17 +96,17 @@ export default function AgencyRegister() {
     if (result.success) {
       try {
         // First send OTP without image data
-        const response = await axios.post(`${BASE_URL}/auth/sendotp`, {
+        const response = await axios.post(`${BASE_URL}/agency/register`, {
           email: form.email,
         });
         console.log('inside try');
         console.log('response', response);
 
         // Pass both form data and file data to the verification screen
-        navigation.navigate('VerifyEmail', {
-          formData: form,
-          fileData: fileData,
-        });
+        // navigation.navigate('VerifyEmail', {
+        //   formData: form,
+        //   fileData: fileData,
+        // });
       } catch (err) {
         console.log('error: ', err.response?.data);
         setError(err.response?.data?.message || 'Registration failed');
@@ -137,30 +139,6 @@ export default function AgencyRegister() {
 
       console.log('Validation errors:', result.error.errors);
     }
-  };
-
-  // Date picker handlers
-  const showDatepicker = () => {
-    setShowDatePicker(true);
-  };
-
-  const onDateChange = (event, selectedDate) => {
-    const currentDate = selectedDate || new Date();
-    setShowDatePicker(Platform.OS === 'ios');
-
-    // Format date to display
-    const formattedDate = currentDate.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-
-    handleChange('dateOfBirth', formattedDate);
-  };
-
-  // Toggle password visibility
-  const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword);
   };
 
   // Image picker function with improved file handling
@@ -304,8 +282,10 @@ export default function AgencyRegister() {
             />
             <TextInput
               placeholder="Agency Name"
-              value={form.name}
-              onChangeText={name => handleChange('name', name)}
+              value={form.agencyName}
+              onChangeText={agencyName =>
+                handleChange('agencyName', agencyName)
+              }
               placeholderTextColor="#8C8C8C"
               style={styles.input}
             />
@@ -324,8 +304,8 @@ export default function AgencyRegister() {
             />
             <TextInput
               placeholder="App ID"
-              value={form.name}
-              onChangeText={name => handleChange('name', name)}
+              value={form.appID}
+              onChangeText={appID => handleChange('appID', appID)}
               placeholderTextColor="#8C8C8C"
               style={styles.input}
             />
@@ -365,8 +345,8 @@ export default function AgencyRegister() {
             />
             <TextInput
               placeholder="Contact Number"
-              value={form.phone}
-              onChangeText={phone => handleChange('phone', phone)}
+              value={form.number}
+              onChangeText={number => handleChange('number', number)}
               placeholderTextColor="#8C8C8C"
               style={styles.input}
               keyboardType="phone-pad"
@@ -413,7 +393,7 @@ export default function AgencyRegister() {
             </Picker>
           </View>
 
-          <View
+          {/* <View
             style={[
               styles.inputContainer,
               fieldErrors.phone && styles.inputError,
@@ -432,6 +412,27 @@ export default function AgencyRegister() {
               style={styles.input}
               keyboardType="phone-pad"
             />
+          </View> */}
+
+          <View
+            style={[
+              styles.inputContainer,
+              fieldErrors.phone && styles.inputError,
+            ]}>
+            <FontAwesome
+              name="bank"
+              size={20}
+              color="#8C8C8C"
+              style={styles.icon}
+            />
+            <TextInput
+              placeholder="Bank Account Number"
+              value={form.accountNumber}
+              onChangeText={accountNumber => handleChange('accountNumber', accountNumber)}
+              placeholderTextColor="#8C8C8C"
+              style={styles.input}
+              keyboardType="phone-pad"
+            />
           </View>
 
           <View
@@ -446,118 +447,79 @@ export default function AgencyRegister() {
               style={styles.icon}
             />
             <TextInput
-              placeholder="Bank Account details"
-              value={form.phone}
-              onChangeText={phone => handleChange('phone', phone)}
+              placeholder="Bank Account IFSC"
+              value={form.IFSC}
+              onChangeText={IFSC => handleChange('IFSC', IFSC)}
               placeholderTextColor="#8C8C8C"
               style={styles.input}
               keyboardType="phone-pad"
             />
           </View>
 
-          {/* DOB Date Picker */}
-          {/* <TouchableOpacity onPress={showDatepicker}>
-            <View style={[
+          <View
+            style={[
               genderInputStyles.container,
-              fieldErrors.dateOfBirth && styles.inputError
+              fieldErrors.gender && styles.inputError,
             ]}>
-              <IconDob
-                name="cake-candles"
-                size={20}
-                color="#8C8C8C"
-                style={styles.icon}
-              />
-              <Text
-                style={
-                  form.dateOfBirth
-                    ? genderInputStyles.inputText
-                    : genderInputStyles.placeholder
-                }>
-                {form.dateOfBirth || 'DOB'}
-              </Text>
-            </View>
-          </TouchableOpacity> */}
-
-          {/* Password Input with show/hide feature */}
-          {/* <View style={[
-            genderInputStyles.container,
-            fieldErrors.password && styles.inputError
-          ]}>
-            <IconPassword
-              name="lock"
+            <Feather
+              name="user-check"
               size={20}
               color="#8C8C8C"
               style={styles.icon}
             />
-            <View
-              style={{
-                flex: 1,
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-              }}>
-              <TextInput
-                placeholder="Enter your Password"
-                value={form.password}
-                onChangeText={pass => handleChange('password', pass)}
-                secureTextEntry={!showPassword}
-                placeholderTextColor="#8C8C8C"
-                style={passwordStyles.input}
+            <Picker
+              selectedValue={form.idProofName}
+              onValueChange={value => handleChange('idProofName', value)}
+              style={genderInputStyles.picker}
+              dropdownIconColor="#8C8C8C">
+              <Picker.Item
+                label="Id Proof"
+                value=""
+                color={colorScheme === 'dark' ? '#aaa' : '#555'}
               />
-              <TouchableOpacity
-                onPress={togglePasswordVisibility}
-                style={passwordStyles.eyeButton}>
-                <IconEye
-                  name={showPassword ? 'eye-off' : 'eye'}
-                  size={20}
-                  color="#8C8C8C"
-                />
-              </TouchableOpacity>
-            </View>
-          </View> */}
-
-          {/* Profile Picture - Just image and buttons */}
-          <View style={profileStyles.profileContainer}>
-            {/* Image Preview */}
-            {profileImage ? (
-              <Image source={profileImage} style={profileStyles.profileImage} />
-            ) : (
-              <View style={profileStyles.profilePlaceholder}>
-                <Text style={{color: '#8C8C8C', alignSelf: 'center'}}>
-                  Logo
-                </Text>
-                {/* <Text style={{color: '#8C8C8C', alignSelf: 'center'}}>
-                  Picture
-                </Text> */}
-              </View>
-            )}
-
-            {/* Gallery and Camera buttons */}
-            <View style={profileStyles.imageButtons}>
-              <TouchableOpacity
-                style={profileStyles.button}
-                onPress={selectImage}>
-                <Text style={profileStyles.buttonText}>Gallery</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={profileStyles.button}
-                onPress={launchCamera}>
-                <Text style={profileStyles.buttonText}>Camera</Text>
-              </TouchableOpacity>
-            </View>
+              <Picker.Item
+                label="Government Id"
+                value="Government Id"
+                color={colorScheme === 'dark' ? '#aaa' : '#555'}
+              />
+              <Picker.Item
+                label="Aadhar"
+                value="Aadhar"
+                color={colorScheme === 'dark' ? '#aaa' : '#555'}
+              />
+              <Picker.Item
+                label="Voter Id"
+                value="Voter Id"
+                color={colorScheme === 'dark' ? '#aaa' : '#555'}
+              />
+            </Picker>
+          </View>
+          
+           <View
+            style={[
+              styles.inputContainer,
+              fieldErrors.phone && styles.inputError,
+            ]}>
+            <FontAwesome
+              name="bank"
+              size={20}
+              color="#8C8C8C"
+              style={styles.icon}
+            />
+            <TextInput
+              placeholder="Bank Account IFSC"
+              value={form.IFSC}
+              onChangeText={IFSC => handleChange('IFSC', IFSC)}
+              placeholderTextColor="#8C8C8C"
+              style={styles.input}
+              keyboardType="phone-pad"
+            />
           </View>
 
-          {/* Show date picker when needed */}
-          {showDatePicker && (
-            <DateTimePicker
-              testID="dateTimePicker"
-              value={form.dateOfBirth ? new Date(form.dateOfBirth) : new Date()}
-              mode="date"
-              display="default"
-              onChange={onDateChange}
-              maximumDate={new Date()} // Limits selection to today's date
-            />
-          )}
+          
+
+
+         
 
           <TouchableOpacity onPress={handleSubmit} style={styles.btn}>
             <Text style={styles.btnText}>Submit</Text>
@@ -577,25 +539,6 @@ export default function AgencyRegister() {
     </>
   );
 }
-
-const passwordStyles = StyleSheet.create({
-  inputContainer: {
-    backgroundColor: 'transparent',
-    borderRadius: 0,
-    paddingHorizontal: 0,
-    margin: 0,
-    flex: 1,
-    height: 50,
-  },
-  input: {
-    color: 'white',
-    height: 50,
-  },
-  eyeButton: {
-    padding: 10,
-    justifyContent: 'flex-end',
-  },
-});
 
 const genderInputStyles = StyleSheet.create({
   container: {
@@ -618,9 +561,9 @@ const genderInputStyles = StyleSheet.create({
   },
   picker: {
     flex: 1,
-    color: 'white',
+    color: '8C8C8C',
     backgroundColor: 'transparent',
-    margin: -8, // To align properly within the container
+    margin: -8, // To align properly within the container,
   },
 });
 
