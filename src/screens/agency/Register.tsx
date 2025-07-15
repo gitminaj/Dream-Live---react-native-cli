@@ -75,7 +75,6 @@ export default function AgencyRegister({navigation}) {
   };
 
   const handleSubmit = async () => {
-    // Clear previous errors
     setError('');
     setFieldErrors({
       name: false,
