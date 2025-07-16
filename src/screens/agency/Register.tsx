@@ -20,6 +20,8 @@ import {BASE_URL} from '../../utils/constant';
 import {Picker} from '@react-native-picker/picker';
 import * as ImagePicker from 'react-native-image-picker';
 
+import * as Burnt from 'burnt';
+
 // Icons
 import IconName from 'react-native-vector-icons/AntDesign';
 import IconEmail from 'react-native-vector-icons/Fontisto';
@@ -35,7 +37,7 @@ export default function AgencyRegister({navigation}) {
   const colorScheme = useColorScheme();
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  
+
   const [fieldErrors, setFieldErrors] = useState({
     name: false,
     agencyName: false,
@@ -66,7 +68,7 @@ export default function AgencyRegister({navigation}) {
 
   const handleChange = (fieldName, value) => {
     setForm({...form, [fieldName]: value});
-    
+
     // Clear field error when user types
     if (fieldErrors[fieldName]) {
       setFieldErrors({...fieldErrors, [fieldName]: false});
@@ -76,7 +78,7 @@ export default function AgencyRegister({navigation}) {
   const handleSubmit = async () => {
     setError('');
     setLoading(true);
-    
+
     // Reset field errors
     setFieldErrors({
       name: false,
@@ -92,6 +94,8 @@ export default function AgencyRegister({navigation}) {
 
     // Validate form data
     const result = agencyRegisterSchema.safeParse(form);
+    
+      console.log('result', result);
 
     if (!result.success) {
       const errors = {};
@@ -127,7 +131,7 @@ export default function AgencyRegister({navigation}) {
     try {
       // Create FormData for file upload
       const formData = new FormData();
-      
+
       // Add form fields
       Object.keys(form).forEach(key => {
         formData.append(key, form[key]);
@@ -146,23 +150,28 @@ export default function AgencyRegister({navigation}) {
         name: idProofFile.name,
       });
 
-      const response = await axios.post(`${BASE_URL}/agency/register`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
+      const response = await axios.post(
+        `${BASE_URL}/agency/register`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
         },
-      });
+      );
 
       console.log('Registration successful:', response.data);
-      
-      // Navigate to verification screen or success screen
-      navigation.navigate('VerifyEmail', {
-        email: form.email,
-        registrationData: response.data,
+
+      Burnt.toast({
+        title: 'Agency request created',
+        preset: 'done',
       });
-      
+      navigation.goBack();
     } catch (err) {
       console.log('Registration error:', err.response?.data);
-      setError(err.response?.data?.message || 'Registration failed. Please try again.');
+      setError(
+        err.response?.data?.message || 'Registration failed. Please try again.',
+      );
     } finally {
       setLoading(false);
     }
@@ -208,7 +217,10 @@ export default function AgencyRegister({navigation}) {
           console.log('User cancelled image picker');
         } else if (response.errorCode) {
           console.log('ImagePicker Error: ', response.errorMessage);
-          Alert.alert('Error', response.errorMessage || 'Failed to select image');
+          Alert.alert(
+            'Error',
+            response.errorMessage || 'Failed to select image',
+          );
         } else if (response.assets && response.assets.length > 0) {
           const asset = response.assets[0];
           console.log('Selected asset:', asset);
@@ -228,7 +240,10 @@ export default function AgencyRegister({navigation}) {
   const takeLogoPhoto = async () => {
     const hasPermission = await requestCameraPermission();
     if (!hasPermission) {
-      Alert.alert('Permission Required', 'Camera permission is required to take photos');
+      Alert.alert(
+        'Permission Required',
+        'Camera permission is required to take photos',
+      );
       return;
     }
 
@@ -282,7 +297,10 @@ export default function AgencyRegister({navigation}) {
           console.log('User cancelled image picker');
         } else if (response.errorCode) {
           console.log('ImagePicker Error: ', response.errorMessage);
-          Alert.alert('Error', response.errorMessage || 'Failed to select image');
+          Alert.alert(
+            'Error',
+            response.errorMessage || 'Failed to select image',
+          );
         } else if (response.assets && response.assets.length > 0) {
           const asset = response.assets[0];
           console.log('Selected ID proof asset:', asset);
@@ -302,7 +320,10 @@ export default function AgencyRegister({navigation}) {
   const takeIdProofPhoto = async () => {
     const hasPermission = await requestCameraPermission();
     if (!hasPermission) {
-      Alert.alert('Permission Required', 'Camera permission is required to take photos');
+      Alert.alert(
+        'Permission Required',
+        'Camera permission is required to take photos',
+      );
       return;
     }
 
@@ -345,17 +366,23 @@ export default function AgencyRegister({navigation}) {
       'Select Agency Logo',
       'Choose how you want to upload your agency logo',
       [
-        {text: 'Gallery', onPress: () => {
-          console.log('Gallery selected');
-          selectLogoFromGallery();
-        }},
-        {text: 'Camera', onPress: () => {
-          console.log('Camera selected');
-          takeLogoPhoto();
-        }},
+        {
+          text: 'Gallery',
+          onPress: () => {
+            console.log('Gallery selected');
+            selectLogoFromGallery();
+          },
+        },
+        {
+          text: 'Camera',
+          onPress: () => {
+            console.log('Camera selected');
+            takeLogoPhoto();
+          },
+        },
         {text: 'Cancel', style: 'cancel'},
       ],
-      {cancelable: true}
+      {cancelable: true},
     );
   };
 
@@ -365,17 +392,23 @@ export default function AgencyRegister({navigation}) {
       'Upload ID Proof',
       'Choose how you want to upload your ID proof document',
       [
-        {text: 'Gallery', onPress: () => {
-          console.log('Gallery selected for ID proof');
-          selectIdProofFromGallery();
-        }},
-        {text: 'Camera', onPress: () => {
-          console.log('Camera selected for ID proof');
-          takeIdProofPhoto();
-        }},
+        {
+          text: 'Gallery',
+          onPress: () => {
+            console.log('Gallery selected for ID proof');
+            selectIdProofFromGallery();
+          },
+        },
+        {
+          text: 'Camera',
+          onPress: () => {
+            console.log('Camera selected for ID proof');
+            takeIdProofPhoto();
+          },
+        },
         {text: 'Cancel', style: 'cancel'},
       ],
-      {cancelable: true}
+      {cancelable: true},
     );
   };
 
@@ -392,8 +425,17 @@ export default function AgencyRegister({navigation}) {
           {error && <Text style={styles.errorText}>{error}</Text>}
 
           {/* Name Input */}
-          <View style={[styles.inputContainer, fieldErrors.name && styles.inputError]}>
-            <IconName name="idcard" size={20} color="#8C8C8C" style={styles.icon} />
+          <View
+            style={[
+              styles.inputContainer,
+              fieldErrors.name && styles.inputError,
+            ]}>
+            <IconName
+              name="idcard"
+              size={20}
+              color="#8C8C8C"
+              style={styles.icon}
+            />
             <TextInput
               placeholder="Name"
               value={form.name}
@@ -404,20 +446,40 @@ export default function AgencyRegister({navigation}) {
           </View>
 
           {/* Agency Name Input */}
-          <View style={[styles.inputContainer, fieldErrors.agencyName && styles.inputError]}>
-            <MaterialIcons name="business" size={20} color="#8C8C8C" style={styles.icon} />
+          <View
+            style={[
+              styles.inputContainer,
+              fieldErrors.agencyName && styles.inputError,
+            ]}>
+            <MaterialIcons
+              name="business"
+              size={20}
+              color="#8C8C8C"
+              style={styles.icon}
+            />
             <TextInput
               placeholder="Agency Name"
               value={form.agencyName}
-              onChangeText={agencyName => handleChange('agencyName', agencyName)}
+              onChangeText={agencyName =>
+                handleChange('agencyName', agencyName)
+              }
               placeholderTextColor="#8C8C8C"
               style={styles.input}
             />
           </View>
 
           {/* App ID Input */}
-          <View style={[styles.inputContainer, fieldErrors.appID && styles.inputError]}>
-            <MaterialIcons name="laptop" size={20} color="#8C8C8C" style={styles.icon} />
+          <View
+            style={[
+              styles.inputContainer,
+              fieldErrors.appID && styles.inputError,
+            ]}>
+            <MaterialIcons
+              name="laptop"
+              size={20}
+              color="#8C8C8C"
+              style={styles.icon}
+            />
             <TextInput
               placeholder="App ID"
               value={form.appID}
@@ -428,8 +490,17 @@ export default function AgencyRegister({navigation}) {
           </View>
 
           {/* Email Input */}
-          <View style={[styles.inputContainer, fieldErrors.email && styles.inputError]}>
-            <IconEmail name="email" size={20} color="#8C8C8C" style={styles.icon} />
+          <View
+            style={[
+              styles.inputContainer,
+              fieldErrors.email && styles.inputError,
+            ]}>
+            <IconEmail
+              name="email"
+              size={20}
+              color="#8C8C8C"
+              style={styles.icon}
+            />
             <TextInput
               placeholder="Email"
               value={form.email}
@@ -442,8 +513,17 @@ export default function AgencyRegister({navigation}) {
           </View>
 
           {/* Contact Number Input */}
-          <View style={[styles.inputContainer, fieldErrors.number && styles.inputError]}>
-            <IconPhone name="phone" size={20} color="#8C8C8C" style={styles.icon} />
+          <View
+            style={[
+              styles.inputContainer,
+              fieldErrors.number && styles.inputError,
+            ]}>
+            <IconPhone
+              name="phone"
+              size={20}
+              color="#8C8C8C"
+              style={styles.icon}
+            />
             <TextInput
               placeholder="Contact Number"
               value={form.number}
@@ -455,27 +535,59 @@ export default function AgencyRegister({navigation}) {
           </View>
 
           {/* Gender Dropdown */}
-          <View style={[styles.pickerContainer, fieldErrors.gender && styles.inputError]}>
-            <IconGender name="face-recognition" size={20} color="#8C8C8C" style={styles.icon} />
+          <View
+            style={[
+              styles.pickerContainer,
+              fieldErrors.gender && styles.inputError,
+            ]}>
+            <IconGender
+              name="face-recognition"
+              size={20}
+              color="#8C8C8C"
+              style={styles.icon}
+            />
             <Picker
               selectedValue={form.gender}
               onValueChange={value => handleChange('gender', value)}
               style={styles.picker}
               dropdownIconColor="#8C8C8C">
               <Picker.Item label="Select Gender" value="" color="#8C8C8C" />
-              <Picker.Item label="Male" value="Male" color={colorScheme === 'dark' ? '#fff' : '#000'} />
-              <Picker.Item label="Female" value="Female" color={colorScheme === 'dark' ? '#fff' : '#000'} />
-              <Picker.Item label="Other" value="Other" color={colorScheme === 'dark' ? '#fff' : '#000'} />
+              <Picker.Item
+                label="Male"
+                value="Male"
+                color={colorScheme === 'dark' ? '#fff' : '#000'}
+              />
+              <Picker.Item
+                label="Female"
+                value="Female"
+                color={colorScheme === 'dark' ? '#fff' : '#000'}
+              />
+              <Picker.Item
+                label="Other"
+                value="Other"
+                color={colorScheme === 'dark' ? '#fff' : '#000'}
+              />
             </Picker>
           </View>
 
           {/* Bank Account Number */}
-          <View style={[styles.inputContainer, fieldErrors.accountNumber && styles.inputError]}>
-            <FontAwesome name="bank" size={20} color="#8C8C8C" style={styles.icon} />
+          <View
+            style={[
+              styles.inputContainer,
+              fieldErrors.accountNumber && styles.inputError,
+            ]}>
+            <FontAwesome
+              name="bank"
+              size={20}
+              color="#8C8C8C"
+              style={styles.icon}
+            />
             <TextInput
               placeholder="Bank Account Number"
               value={form.accountNumber}
-              onChangeText={accountNumber => handleChange('accountNumber', accountNumber)}
+              onChangeText={accountNumber =>
+                handleChange('accountNumber', accountNumber)
+              }
               placeholderTextColor="#8C8C8C"
               style={styles.input}
               keyboardType="numeric"
@@ -483,8 +595,17 @@ export default function AgencyRegister({navigation}) {
           </View>
 
           {/* IFSC Code */}
-          <View style={[styles.inputContainer, fieldErrors.IFSC && styles.inputError]}>
-            <FontAwesome name="bank" size={20} color="#8C8C8C" style={styles.icon} />
+          <View
+            style={[
+              styles.inputContainer,
+              fieldErrors.IFSC && styles.inputError,
+            ]}>
+            <FontAwesome
+              name="bank"
+              size={20}
+              color="#8C8C8C"
+              style={styles.icon}
+            />
             <TextInput
               placeholder="Bank IFSC Code"
               value={form.IFSC}
@@ -496,18 +617,47 @@ export default function AgencyRegister({navigation}) {
           </View>
 
           {/* ID Proof Type Dropdown */}
-          <View style={[styles.pickerContainer, fieldErrors.idProofName && styles.inputError]}>
-            <Feather name="user-check" size={20} color="#8C8C8C" style={styles.icon} />
+          <View
+            style={[
+              styles.pickerContainer,
+              fieldErrors.idProofName && styles.inputError,
+            ]}>
+            <Feather
+              name="user-check"
+              size={20}
+              color="#8C8C8C"
+              style={styles.icon}
+            />
             <Picker
               selectedValue={form.idProofName}
               onValueChange={value => handleChange('idProofName', value)}
               style={styles.picker}
               dropdownIconColor="#8C8C8C">
-              <Picker.Item label="Select ID Proof Type" value="" color="#8C8C8C" />
-              <Picker.Item label="Government ID" value="Government Id" color={colorScheme === 'dark' ? '#fff' : '#000'} />
-              <Picker.Item label="Aadhar Card" value="Aadhar" color={colorScheme === 'dark' ? '#fff' : '#000'} />
-              <Picker.Item label="Voter ID" value="Voter Id" color={colorScheme === 'dark' ? '#fff' : '#000'} />
-              <Picker.Item label="PAN Card" value="PAN Card" color={colorScheme === 'dark' ? '#fff' : '#000'} />
+              <Picker.Item
+                label="Select ID Proof Type"
+                value=""
+                color="#8C8C8C"
+              />
+              <Picker.Item
+                label="Government ID"
+                value="Government Id"
+                color={colorScheme === 'dark' ? '#fff' : '#000'}
+              />
+              <Picker.Item
+                label="Aadhar Card"
+                value="Aadhar"
+                color={colorScheme === 'dark' ? '#fff' : '#000'}
+              />
+              <Picker.Item
+                label="Voter ID"
+                value="Voter Id"
+                color={colorScheme === 'dark' ? '#fff' : '#000'}
+              />
+              <Picker.Item
+                label="PAN Card"
+                value="PAN Card"
+                color={colorScheme === 'dark' ? '#fff' : '#000'}
+              />
             </Picker>
           </View>
 
@@ -538,8 +688,11 @@ export default function AgencyRegister({navigation}) {
             <View style={styles.logoContainer}>
               {agencyLogo ? (
                 <View style={styles.logoPreview}>
-                  <Image source={{uri: agencyLogo.uri}} style={styles.logoImage} />
-                  <TouchableOpacity 
+                  <Image
+                    source={{uri: agencyLogo.uri}}
+                    style={styles.logoImage}
+                  />
+                  <TouchableOpacity
                     style={styles.removeButton}
                     onPress={() => setAgencyLogo(null)}>
                     <MaterialIcons name="close" size={16} color="#FF6B6B" />
@@ -563,8 +716,8 @@ export default function AgencyRegister({navigation}) {
           </View>
 
           {/* Submit Button */}
-          <TouchableOpacity 
-            onPress={handleSubmit} 
+          <TouchableOpacity
+            onPress={handleSubmit}
             style={[styles.btn, loading && styles.btnDisabled]}
             disabled={loading}>
             <Text style={styles.btnText}>

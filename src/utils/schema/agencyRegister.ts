@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-const agencyRegisterSchema = z.object({
+export const agencyRegisterSchema = z.object({
   name: z.string().min(3, { message: 'Minimum three character name required' }),
   email: z.string().email({ message: 'Invalid email address' }),
   number: z
@@ -10,7 +10,7 @@ const agencyRegisterSchema = z.object({
   gender: z.enum(['Male', 'Female', 'Other'], {
     message: 'Gender must be Male, Female, or Other',
   }),
-  idProofName: z.enum(['Government Id', 'Aadhar', 'Voter Id'], {
+  idProofName: z.enum(['Government Id', 'Aadhar', 'Voter Id', 'PAN Card'], {
     message: 'ID Proof must be one of the allowed types',
   }),
   accountNumber: z
@@ -24,5 +24,3 @@ const agencyRegisterSchema = z.object({
     }),
 });
 
-
-export type registerType = z.infer<typeof agencyRegisterSchema>;
