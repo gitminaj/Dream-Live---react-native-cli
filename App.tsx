@@ -49,6 +49,7 @@ import { PersistGate } from 'redux-persist/integration/react';
 import AgencyRegister from './src/screens/agency/Register';
 import CreateHost from './src/screens/agency/CreateHost';
 import HostStreaming from './src/screens/agency/HostStreaming';
+import HostRegister from './src/screens/host/Register';
 
 
 const Stack = createNativeStackNavigator();
@@ -99,6 +100,10 @@ function App(): React.JSX.Element {
                 <Stack.Screen name='AgencyRegister' component={AgencyRegister} />
                 <Stack.Screen name='CreateHost' component={CreateHost} />
                 <Stack.Screen name='HostStreaming' component={HostStreaming} />
+
+                {/* host */}
+                <Stack.Screen name='HostRegister' component={HostRegister} />
+
                 </Stack.Navigator>
               </NavigationContainer>
         </UserContextProvider>

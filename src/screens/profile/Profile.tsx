@@ -191,6 +191,11 @@ const handlePostClick = () => {
               onPress={ () => navigation.navigate('AgencyRegister') }
             />
             <MenuItem
+              icon={<AgencyIcon name="user" size={20} color="#8D96A8" />}
+              title="Host"
+              onPress={ () => navigation.navigate('HostRegister') }
+            />
+            <MenuItem
               icon={<MyRoomIcon name="key-outline" size={20} color="#8D96A8" />}
               title="My Room"
             />
