@@ -50,6 +50,8 @@ import AgencyRegister from './src/screens/agency/Register';
 import CreateHost from './src/screens/agency/CreateHost';
 import HostStreaming from './src/screens/agency/HostStreaming';
 import HostRegister from './src/screens/host/Register';
+import HostRequest from './src/screens/agency/HostRequest';
+import AgencyList from './src/screens/agency/AgencyList';
 
 
 const Stack = createNativeStackNavigator();
@@ -100,6 +102,8 @@ function App(): React.JSX.Element {
                 <Stack.Screen name='AgencyRegister' component={AgencyRegister} />
                 <Stack.Screen name='CreateHost' component={CreateHost} />
                 <Stack.Screen name='HostStreaming' component={HostStreaming} />
+                <Stack.Screen name='HostRequest' component={HostRequest} />
+                <Stack.Screen name='AgencyList' component={AgencyList} />
 
                 {/* host */}
                 <Stack.Screen name='HostRegister' component={HostRegister} />

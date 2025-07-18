@@ -730,9 +730,9 @@ export default function AgencyRegister({navigation}) {
       {/* Bottom Navigation */}
       <View style={styles.bottomNavigation}>
         <TouchableOpacity
-          onPress={() => navigation.navigate('CreateHost')}
+          onPress={() => navigation.navigate('HostRequest')}
           style={styles.navButton}>
-          <Text style={styles.navButtonText}>Create Host</Text>
+          <Text style={styles.navButtonText}>Host Request</Text>
         </TouchableOpacity>
         <TouchableOpacity
           onPress={() => navigation.navigate('HostStreaming')}

@@ -754,7 +754,7 @@ export default function HostRegister({navigation}) {
       </ScrollView>
 
       {/* Bottom Navigation */}
-      <View style={styles.bottomNavigation}>
+      {/* <View style={styles.bottomNavigation}>
         <TouchableOpacity
           onPress={() => navigation.navigate('CreateHost')}
           style={styles.navButton}>
@@ -765,7 +765,8 @@ export default function HostRegister({navigation}) {
           style={styles.navButton}>
           <Text style={styles.navButtonText}>Host Streaming</Text>
         </TouchableOpacity>
-      </View>
+      </View> */}
+      
     </View>
   );
 }

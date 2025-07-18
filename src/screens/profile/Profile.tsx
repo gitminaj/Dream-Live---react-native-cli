@@ -187,8 +187,13 @@ const handlePostClick = () => {
           <View style={styles.agencyContainer}>
             <MenuItem
               icon={<AgencyIcon name="user" size={20} color="#8D96A8" />}
-              title="Agency"
+              title="Create Agency"
               onPress={ () => navigation.navigate('AgencyRegister') }
+            />
+            <MenuItem
+              icon={<AgencyIcon name="user" size={20} color="#8D96A8" />}
+              title="Agency List"
+              onPress={ () => navigation.navigate('AgencyList') }
             />
             <MenuItem
               icon={<AgencyIcon name="user" size={20} color="#8D96A8" />}
